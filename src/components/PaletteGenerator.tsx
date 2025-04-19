@@ -7,6 +7,7 @@ import { useLocalStorage } from "../hooks/useLocalStorage";
 import { Palette } from "../types";
 import { debounce } from "lodash";
 import { toast } from "sonner";
+import { AddUsedPalette } from "./AddUsedPalette";
 
 const defaultColors = [
   "#dbdbd9", // white
@@ -37,6 +38,7 @@ export default function PaletteGenerator() {
   );
 
   const [isShuffling, setIsShuffling] = useState(false);
+  const [isAddPaletteDialogOpen, setIsAddPaletteDialogOpen] = useState(false);
 
   const validColors = useMemo(
     () => inputColors.filter((color) => color.trim() !== ""),
@@ -46,18 +48,57 @@ export default function PaletteGenerator() {
   const memoizedPalettes = useMemo(() => palettes, [palettes]);
 
   const generate = useCallback(() => {
-    const newPalettes = generatePalettes(validColors, paletteSize, numSamples);
+    const usedPalettesToKeep = palettes.filter((p) => p.used);
+    let numPalettesToGenerate = numSamples - usedPalettesToKeep.length;
 
-    const updatedPalettes = newPalettes.map((newPalette) => {
-      const paletteKey = JSON.stringify(newPalette.colors);
+    let newPalettes: Palette[] = [];
+
+    while (numPalettesToGenerate > 0) {
+      const generated = generatePalettes(
+        validColors,
+        paletteSize,
+        numPalettesToGenerate
+      );
+
+      const filteredGenerated = generated.filter((newPalette) => {
+        const newPaletteKey = JSON.stringify(newPalette.colors);
+        return (
+          !usedPalettesToKeep.some(
+            (usedPalette) =>
+              JSON.stringify(usedPalette.colors) === newPaletteKey
+          ) &&
+          !newPalettes.some(
+            (existingNewPalette) =>
+              JSON.stringify(existingNewPalette.colors) === newPaletteKey
+          )
+        );
+      });
+
+      newPalettes = [...newPalettes, ...filteredGenerated];
+      numPalettesToGenerate =
+        numSamples - usedPalettesToKeep.length - newPalettes.length;
+    }
+
+    const combinedPalettes = [...usedPalettesToKeep, ...newPalettes];
+    const finalPalettes = combinedPalettes.slice(0, numSamples);
+
+    const updatedPalettes = finalPalettes.map((palette) => {
+      const paletteKey = JSON.stringify(palette.colors);
       return {
-        ...newPalette,
+        ...palette,
         used: usedPalettes.includes(paletteKey),
       };
     });
 
     setPalettes(updatedPalettes);
-  }, [validColors, paletteSize, numSamples, usedPalettes, setPalettes]);
+  }, [
+    validColors,
+    paletteSize,
+    numSamples,
+    usedPalettes,
+    setPalettes,
+    palettes,
+  ]);
 
   const handleGeneratePalettes = useMemo(
     () => debounce(generate, 300),
@@ -137,7 +178,8 @@ export default function PaletteGenerator() {
 
   const handleClearPalettes = useCallback(() => {
     setPalettes([]);
-  }, [setPalettes]);
+    setUsedPalettes([]);
+  }, [setPalettes, setUsedPalettes]);
 
   useEffect(() => {
     if (!paletteSizeInitialized) {
@@ -161,6 +203,38 @@ export default function PaletteGenerator() {
     setPalettes(palettes.map((palette) => ({ ...palette, used: false })));
   };
 
+  const handleOpenAddPaletteDialog = () => {
+    setIsAddPaletteDialogOpen(true);
+  };
+
+  const handleCloseAddPaletteDialog = () => {
+    setIsAddPaletteDialogOpen(false);
+  };
+
+  const handleAddPalette = (newPalette: Palette) => {
+    const newPaletteKey = JSON.stringify(newPalette.colors);
+
+    // @ts-expect-error -  Argument of type '(prevUsedPalettes: string[]) => string[]' is not assignable to parameter of type 'string[]'.
+    setUsedPalettes((prevUsedPalettes: string[]) => {
+      if (prevUsedPalettes.includes(newPaletteKey)) {
+        return prevUsedPalettes;
+      }
+      return [...prevUsedPalettes, newPaletteKey];
+    });
+
+    // @ts-expect-error -  Argument of type '(prevPalettes: Palette[]) => Palette[]' is not assignable to parameter of type 'Palette[]'. Type 'Palette' is not assignable to type 'Palette'.
+    setPalettes((prevPalettes: Palette[]) => {
+      const isDuplicate = prevPalettes.some(
+        (p) => JSON.stringify(p.colors) === newPaletteKey
+      );
+
+      if (!isDuplicate) {
+        return [newPalette, ...prevPalettes.slice(0, numSamples - 1)]; // Add new and limit total
+      }
+      return prevPalettes;
+    });
+  };
+
   return (
     <div className="space-y-8">
       <ColorInputs colors={inputColors} onColorChange={handleColorChange} />
@@ -181,6 +255,15 @@ export default function PaletteGenerator() {
         palettes={memoizedPalettes}
         onPaletteToggle={handlePaletteToggle}
         isShuffling={isShuffling}
+        handleOpenAddPaletteDialog={handleOpenAddPaletteDialog}
+      />
+
+      <AddUsedPalette
+        isOpen={isAddPaletteDialogOpen}
+        onClose={handleCloseAddPaletteDialog}
+        validColors={validColors}
+        paletteSize={paletteSize}
+        onAddPalette={handleAddPalette}
       />
     </div>
   );

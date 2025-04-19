@@ -9,50 +9,33 @@ export const generatePalettes = (
     return [];
   }
 
-  const combinations: string[][] = [];
-
-  function combine(
-    arr: string[],
-    k: number,
-    start: number,
-    currentCombination: string[]
-  ) {
-    if (k === 0) {
-      combinations.push([...currentCombination]);
+  const result: Palette[] = [];
+  const generateHelper = (
+    current: string[],
+    remaining: number,
+    availableColors: string[]
+  ) => {
+    if (remaining === 0) {
+      result.push({ colors: [...current], used: false });
       return;
     }
 
-    for (let i = start; i <= arr.length - k; i++) {
-      currentCombination.push(arr[i]);
-      combine(arr, k - 1, i + 1, currentCombination);
-      currentCombination.pop();
+    for (const color of availableColors) {
+      current.push(color);
+      const nextAvailable = availableColors.filter((c) => c !== color);
+      generateHelper(current, remaining - 1, nextAvailable);
+      current.pop();
     }
+  };
+
+  generateHelper([], paletteSize, inputColors);
+
+  if (result.length > numSamples) {
+    const shuffled = [...result].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, numSamples);
   }
 
-  combine(inputColors, paletteSize, 0, []);
-
-  if (numSamples < combinations.length) {
-    const sampledCombinations: string[][] = [];
-    const indices = new Set<number>();
-
-    while (sampledCombinations.length < numSamples) {
-      const randomIndex = Math.floor(Math.random() * combinations.length);
-      if (!indices.has(randomIndex)) {
-        sampledCombinations.push(combinations[randomIndex]);
-        indices.add(randomIndex);
-      }
-    }
-
-    return sampledCombinations.map((combination) => ({
-      colors: combination,
-      used: false,
-    }));
-  }
-
-  return combinations.map((combination) => ({
-    colors: combination,
-    used: false,
-  }));
+  return result;
 };
 
 export const hexToRgb = (hex: string): [number, number, number] | null => {

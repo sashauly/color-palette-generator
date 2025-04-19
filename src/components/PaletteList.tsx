@@ -9,17 +9,20 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Palette as PaletteIcon } from "lucide-react";
+import { Button } from "./ui/button";
 
 interface PaletteListProps {
   palettes: Palette[];
   onPaletteToggle: (index: number) => void;
   isShuffling: boolean;
+  handleOpenAddPaletteDialog: () => void;
 }
 
 export const PaletteList: React.FC<PaletteListProps> = ({
   palettes,
   onPaletteToggle,
   isShuffling,
+  handleOpenAddPaletteDialog,
 }) => {
   if (palettes.length === 0) {
     return <div className="text-center py-8">No palettes generated yet.</div>;
@@ -36,6 +39,7 @@ export const PaletteList: React.FC<PaletteListProps> = ({
           {palettes.length} palettes generated. Check the box to mark a palette
           as used.
         </CardDescription>
+        <Button onClick={handleOpenAddPaletteDialog}>Add Used Palette</Button>
       </CardHeader>
       <CardContent>
         <div

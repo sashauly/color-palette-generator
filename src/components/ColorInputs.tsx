@@ -29,7 +29,7 @@ export const ColorInputs: React.FC<ColorInputsProps> = ({
         <CardDescription>Add colors to generate palettes from.</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
           {colors.map((color, index) => (
             <div key={index} className="flex flex-col space-y-2">
               <Label htmlFor={`color-${index}`} className="text-sm font-medium">

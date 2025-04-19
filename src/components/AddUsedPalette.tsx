@@ -19,7 +19,6 @@ import { useMediaQuery } from "@uidotdev/usehooks";
 import { toast } from "sonner";
 import { useCallback, useEffect, useState } from "react";
 import { Palette } from "@/types";
-import { Check } from "lucide-react";
 
 interface AddUsedPaletteProps {
   isOpen: boolean;
@@ -48,9 +47,9 @@ export function AddUsedPalette({
   const handleColorSelect = useCallback(
     (color: string) => {
       if (selectedColors.includes(color)) {
-        setSelectedColors(selectedColors.filter((c) => c !== color)); // Deselect if already selected
+        setSelectedColors(selectedColors.filter((c) => c !== color));
       } else if (selectedColors.length < paletteSize) {
-        setSelectedColors([...selectedColors, color]); // Select if not selected and within palette size
+        setSelectedColors([...selectedColors, color]);
       } else {
         toast.error(`You can only select ${paletteSize} colors.`);
       }
@@ -66,7 +65,7 @@ export function AddUsedPalette({
 
     const newPalette: Palette = { colors: selectedColors, used: true };
     onAddPalette(newPalette);
-    onClose(); // Close the dialog after adding the palette
+    onClose();
   }, [selectedColors, paletteSize, onAddPalette, onClose]);
 
   if (!isOpen) {
@@ -151,7 +150,7 @@ function AddUsedPaletteForm({
         >
           {selectedColors.includes(color) && (
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white animate-pulse">
-              <Check />
+              {selectedColors.indexOf(color) + 1}
             </div>
           )}
         </Button>

@@ -228,10 +228,18 @@ export default function PaletteGenerator() {
         (p) => JSON.stringify(p.colors) === newPaletteKey
       );
 
+      const newPaletteObj = { ...newPalette, used: true };
+
       if (!isDuplicate) {
-        return [newPalette, ...prevPalettes.slice(0, numSamples - 1)]; // Add new and limit total
+        return [newPaletteObj, ...prevPalettes.slice(0, numSamples - 1)];
       }
-      return prevPalettes;
+
+      return prevPalettes.map((palette) => {
+        if (JSON.stringify(palette.colors) === newPaletteKey) {
+          return { ...palette, used: true };
+        }
+        return palette;
+      });
     });
   };
 

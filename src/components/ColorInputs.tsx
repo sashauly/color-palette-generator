@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Brush } from "lucide-react";
 
 interface ColorInputsProps {
   colors: string[];
@@ -21,7 +22,10 @@ export const ColorInputs: React.FC<ColorInputsProps> = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Input Colors</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <Brush />
+          Input Colors
+        </CardTitle>
         <CardDescription>Add colors to generate palettes from.</CardDescription>
       </CardHeader>
       <CardContent>

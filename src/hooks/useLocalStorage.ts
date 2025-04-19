@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 export function useLocalStorage<T>(
   key: string,
   initialValue: T
-): [T, (value: T) => void] {
+): [T, (value: T) => void, boolean] {
   const [storedValue, setStoredValue] = useState<T>(() => {
     try {
       const item = window.localStorage.getItem(key);
@@ -14,12 +14,15 @@ export function useLocalStorage<T>(
     }
   });
 
+  const [isInitialized, setIsInitialized] = useState(false);
+
   const setValue = (value: T | ((val: T) => T)) => {
     try {
       const valueToStore =
         value instanceof Function ? value(storedValue) : value;
       setStoredValue(valueToStore);
       window.localStorage.setItem(key, JSON.stringify(valueToStore));
+      setIsInitialized(true);
     } catch (error) {
       console.error(`Error setting localStorage key "${key}":`, error);
     }
@@ -36,6 +39,10 @@ export function useLocalStorage<T>(
       }
     };
 
+    if (window.localStorage.getItem(key)) {
+      setIsInitialized(true);
+    }
+
     window.addEventListener("storage", handleStorageChange);
 
     return () => {
@@ -43,5 +50,5 @@ export function useLocalStorage<T>(
     };
   }, [key]);
 
-  return [storedValue, setValue];
+  return [storedValue, setValue, isInitialized];
 }

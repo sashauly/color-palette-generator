@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "./ui/button";
-import { Shuffle, Trash2 } from "lucide-react";
+import { Settings, Shuffle, Sparkles, Trash2 } from "lucide-react";
 
 interface PaletteControlsProps {
   paletteSize: number;
@@ -20,6 +20,7 @@ interface PaletteControlsProps {
   onShuffle: () => void;
   onClearUsed: () => void;
   onGenerate: () => void;
+  onClearAll: () => void;
   isShuffling: boolean;
 }
 
@@ -31,12 +32,16 @@ export const PaletteControls: React.FC<PaletteControlsProps> = ({
   onShuffle,
   onClearUsed,
   onGenerate,
+  onClearAll,
   isShuffling,
 }) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Settings</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <Settings />
+          Settings
+        </CardTitle>
         <CardDescription>
           Configure the palette generation process.
         </CardDescription>
@@ -80,7 +85,8 @@ export const PaletteControls: React.FC<PaletteControlsProps> = ({
       </CardContent>
       <CardFooter className="flex flex-wrap justify-center sm:justify-start gap-2">
         <Button onClick={onGenerate} className="w-full sm:w-auto">
-          Generate Palettes
+          <Sparkles />
+          Generate
         </Button>
 
         <Button
@@ -91,7 +97,7 @@ export const PaletteControls: React.FC<PaletteControlsProps> = ({
     `}
         >
           <Shuffle className={`${isShuffling ? "animate-spin" : ""}`} />
-          Shuffle Unused
+          Shuffle
         </Button>
         <Button
           variant="destructive"
@@ -100,6 +106,15 @@ export const PaletteControls: React.FC<PaletteControlsProps> = ({
         >
           <Trash2 />
           Clear Used
+        </Button>
+        <Button
+          variant="destructive"
+          className="w-full sm:w-auto"
+          onClick={onClearAll}
+          disabled={isShuffling}
+        >
+          <Trash2 />
+          Clear
         </Button>
       </CardFooter>
     </Card>

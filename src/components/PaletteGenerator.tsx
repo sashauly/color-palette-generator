@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { ColorInputs } from "./ColorInputs";
 import { PaletteControls } from "./PaletteControls";
 import { PaletteList } from "./PaletteList";
 import { generatePalettes } from "../utils/colorUtils";
 import { useLocalStorage } from "../hooks/useLocalStorage";
 import { Palette } from "../types";
+import { debounce } from "lodash";
+import { toast } from "sonner";
 
 const defaultColors = [
   "#dbdbd9", // white
@@ -20,9 +22,14 @@ export default function PaletteGenerator() {
     "inputColors",
     defaultColors
   );
-
-  const [paletteSize, setPaletteSize] = useLocalStorage("paletteSize", 3);
-  const [numSamples, setNumSamples] = useLocalStorage("numSamples", 50);
+  const [paletteSize, setPaletteSize, paletteSizeInitialized] = useLocalStorage(
+    "paletteSize",
+    3
+  );
+  const [numSamples, setNumSamples, numSamplesInitialized] = useLocalStorage(
+    "numSamples",
+    50
+  );
   const [palettes, setPalettes] = useLocalStorage<Palette[]>("palettes", []);
   const [usedPalettes, setUsedPalettes] = useLocalStorage<string[]>(
     "usedPalettes",
@@ -31,8 +38,14 @@ export default function PaletteGenerator() {
 
   const [isShuffling, setIsShuffling] = useState(false);
 
-  const handleGeneratePalettes = () => {
-    const validColors = inputColors.filter((color) => color.trim() !== "");
+  const validColors = useMemo(
+    () => inputColors.filter((color) => color.trim() !== ""),
+    [inputColors]
+  );
+
+  const memoizedPalettes = useMemo(() => palettes, [palettes]);
+
+  const generate = useCallback(() => {
     const newPalettes = generatePalettes(validColors, paletteSize, numSamples);
 
     const updatedPalettes = newPalettes.map((newPalette) => {
@@ -44,54 +57,106 @@ export default function PaletteGenerator() {
     });
 
     setPalettes(updatedPalettes);
-  };
+  }, [validColors, paletteSize, numSamples, usedPalettes, setPalettes]);
 
-  const handleColorChange = (index: number, color: string) => {
-    const newColors = [...inputColors];
-    newColors[index] = color;
-    setInputColors(newColors);
-  };
+  const handleGeneratePalettes = useMemo(
+    () => debounce(generate, 300),
+    [generate]
+  );
 
-  const handlePaletteSizeChange = (size: number) => {
-    setPaletteSize(size);
-  };
+  const handleColorChange = useCallback(
+    (index: number, color: string) => {
+      // @ts-expect-error -  Argument of type '(prevColors: string[]) => string[]' is not assignable to parameter of type 'string[]'.
+      setInputColors((prevColors: string[]) => {
+        const newColors = [...prevColors];
+        newColors[index] = color;
+        return newColors;
+      });
+    },
+    [setInputColors]
+  );
 
-  const handleNumSamplesChange = (samples: number) => {
-    setNumSamples(samples);
-  };
+  const handlePaletteSizeChange = useCallback(
+    (size: number) => {
+      setPaletteSize(size);
+    },
+    [setPaletteSize]
+  );
 
-  const handlePaletteToggle = (index: number) => {
-    const palette = palettes[index];
-    const paletteKey = JSON.stringify(palette.colors);
+  const handleNumSamplesChange = useCallback(
+    (samples: number) => {
+      setNumSamples(samples);
+    },
+    [setNumSamples]
+  );
 
-    const newUsedPalettes = palette.used
-      ? usedPalettes.filter((key) => key !== paletteKey)
-      : [...usedPalettes, paletteKey];
+  const handlePaletteToggle = useCallback(
+    (index: number) => {
+      const palette = memoizedPalettes[index];
+      const paletteKey = JSON.stringify(palette.colors);
 
-    setUsedPalettes(newUsedPalettes);
+      // @ts-expect-error -  Argument of type '(prevUsedPalettes: string[]) => string[]' is not assignable to parameter of type 'string[]'.
+      setUsedPalettes((prevUsedPalettes: string[]) => {
+        return palette.used
+          ? prevUsedPalettes.filter((key) => key !== paletteKey)
+          : [...prevUsedPalettes, paletteKey];
+      });
 
-    const newPalettes = [...palettes];
-    newPalettes[index] = {
-      ...newPalettes[index],
-      used: !newPalettes[index].used,
-    };
-    setPalettes(newPalettes);
-  };
+      // @ts-expect-error -  Argument of type '(prevPalettes: Palette[]) => Palette[]' is not assignable to parameter of type 'Palette[]'.
+      setPalettes((prevPalettes: Palette[]) => {
+        const newPalettes = [...prevPalettes];
+        newPalettes[index] = {
+          ...newPalettes[index],
+          used: !newPalettes[index].used,
+        };
+        return newPalettes;
+      });
+    },
+    [setPalettes, setUsedPalettes, memoizedPalettes]
+  );
 
-  const handleShuffle = () => {
+  const handleShuffle = useCallback(() => {
     setIsShuffling(true);
 
-    const usedPalettes = palettes.filter((p) => p.used);
-    const unusedPalettes = palettes.filter((p) => !p.used);
+    // @ts-expect-error -  Argument of type '(prevPalettes: Palette[]) => Palette[]' is not assignable to parameter of type 'Palette[]'.
+    setPalettes((prevPalettes: Palette[]) => {
+      const usedPalettes = prevPalettes.filter((p) => p.used);
+      const unusedPalettes = prevPalettes.filter((p) => !p.used);
 
-    const shuffledUnused = [...unusedPalettes].sort(() => Math.random() - 0.5);
+      const shuffledUnused = [...unusedPalettes].sort(
+        () => Math.random() - 0.5
+      );
 
-    setPalettes([...usedPalettes, ...shuffledUnused]);
+      const combinedPalettes = [...usedPalettes, ...shuffledUnused];
+
+      return combinedPalettes;
+    });
 
     setTimeout(() => setIsShuffling(false), 500);
-  };
+  }, [setPalettes]);
+
+  const handleClearPalettes = useCallback(() => {
+    setPalettes([]);
+  }, [setPalettes]);
+
+  useEffect(() => {
+    if (!paletteSizeInitialized) {
+      setPaletteSize(3);
+    }
+    if (!numSamplesInitialized) {
+      setNumSamples(50);
+    }
+  }, [
+    numSamplesInitialized,
+    setNumSamples,
+    paletteSizeInitialized,
+    setPaletteSize,
+  ]);
 
   const handleClearUsed = () => {
+    if (usedPalettes.length === 0) {
+      toast.error("No palettes to clear");
+    }
     setUsedPalettes([]);
     setPalettes(palettes.map((palette) => ({ ...palette, used: false })));
   };
@@ -105,14 +170,15 @@ export default function PaletteGenerator() {
         numSamples={numSamples}
         onPaletteSizeChange={handlePaletteSizeChange}
         onNumSamplesChange={handleNumSamplesChange}
-        onClearUsed={handleClearUsed}
         onGenerate={handleGeneratePalettes}
         onShuffle={handleShuffle}
+        onClearUsed={handleClearUsed}
+        onClearAll={handleClearPalettes}
         isShuffling={isShuffling}
       />
 
       <PaletteList
-        palettes={palettes}
+        palettes={memoizedPalettes}
         onPaletteToggle={handlePaletteToggle}
         isShuffling={isShuffling}
       />

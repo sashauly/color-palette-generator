@@ -1,5 +1,5 @@
 import React from "react";
-import { Palette } from "../types";
+import type { Palette } from "../types";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Card,
@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Palette as PaletteIcon } from "lucide-react";
 
 interface PaletteListProps {
   palettes: Palette[];
@@ -27,7 +28,10 @@ export const PaletteList: React.FC<PaletteListProps> = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Generated Palettes</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <PaletteIcon />
+          Generated Palettes
+        </CardTitle>
         <CardDescription>
           {palettes.length} palettes generated. Check the box to mark a palette
           as used.

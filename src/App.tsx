@@ -1,4 +1,5 @@
 import PaletteGenerator from "./components/PaletteGenerator";
+import { Toaster } from "@/components/ui/sonner";
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
             reserved.
           </p>
         </footer>
+        <Toaster />
       </div>
     </div>
   );

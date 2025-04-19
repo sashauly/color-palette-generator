@@ -14,6 +14,7 @@ import { Settings, Shuffle, Sparkles, Trash2 } from "lucide-react";
 
 interface PaletteControlsProps {
   paletteSize: number;
+  totalPossiblePalettes: number;
   numSamples: number;
   onPaletteSizeChange: (size: number) => void;
   onNumSamplesChange: (samples: number) => void;
@@ -27,6 +28,7 @@ interface PaletteControlsProps {
 export const PaletteControls: React.FC<PaletteControlsProps> = ({
   paletteSize,
   numSamples,
+  totalPossiblePalettes,
   onPaletteSizeChange,
   onNumSamplesChange,
   onShuffle,
@@ -43,7 +45,8 @@ export const PaletteControls: React.FC<PaletteControlsProps> = ({
           Settings
         </CardTitle>
         <CardDescription>
-          Configure the palette generation process.
+          <p>Configure the palette generation process.</p>
+          <p>You can generate up to a {totalPossiblePalettes} palettes.</p>
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -73,7 +76,7 @@ export const PaletteControls: React.FC<PaletteControlsProps> = ({
               type="range"
               id="num-samples"
               min="10"
-              max="100"
+              max={totalPossiblePalettes}
               step="5"
               value={numSamples}
               onChange={(e) => onNumSamplesChange(Number(e.target.value))}

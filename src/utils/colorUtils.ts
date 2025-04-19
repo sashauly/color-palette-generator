@@ -1,5 +1,30 @@
 import { Palette } from "../types";
 
+export const calculateTotalPossiblePalettes = (
+  inputColorsLength: number,
+  paletteSize: number
+) => {
+  if (inputColorsLength < paletteSize || paletteSize <= 0) {
+    return 0;
+  }
+
+  const numerator = factorial(inputColorsLength);
+  const denominator = factorial(inputColorsLength - paletteSize);
+
+  return numerator / denominator;
+};
+
+const factorial = (n: number): number => {
+  if (n === 0) {
+    return 1;
+  }
+  let result = 1;
+  for (let i = 1; i <= n; i++) {
+    result *= i;
+  }
+  return result;
+};
+
 export const generatePalettes = (
   inputColors: string[],
   paletteSize: number,

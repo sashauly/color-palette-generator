@@ -2,7 +2,10 @@ import { useState, useCallback, useMemo, useEffect } from "react";
 import { ColorInputs } from "./ColorInputs";
 import { PaletteControls } from "./PaletteControls";
 import { PaletteList } from "./PaletteList";
-import { generatePalettes } from "../utils/colorUtils";
+import {
+  calculateTotalPossiblePalettes,
+  generatePalettes,
+} from "../utils/colorUtils";
 import { useLocalStorage } from "../hooks/useLocalStorage";
 import { Palette } from "../types";
 import { debounce } from "lodash";
@@ -214,34 +217,40 @@ export default function PaletteGenerator() {
   const handleAddPalette = (newPalette: Palette) => {
     const newPaletteKey = JSON.stringify(newPalette.colors);
 
-    // @ts-expect-error -  Argument of type '(prevUsedPalettes: string[]) => string[]' is not assignable to parameter of type 'string[]'.
+    // @ts-expect-error -  Argument of type '(prevUsedPalettes: string[]) => string[]' is not assignable to parameter of type 'string[]'. Type 'string' is not assignable to type 'string[]'.
     setUsedPalettes((prevUsedPalettes: string[]) => {
-      if (prevUsedPalettes.includes(newPaletteKey)) {
-        return prevUsedPalettes;
-      }
-      return [...prevUsedPalettes, newPaletteKey];
+      const keyExists = prevUsedPalettes.includes(newPaletteKey);
+      return keyExists
+        ? prevUsedPalettes
+        : [...prevUsedPalettes, newPaletteKey];
     });
 
     // @ts-expect-error -  Argument of type '(prevPalettes: Palette[]) => Palette[]' is not assignable to parameter of type 'Palette[]'. Type 'Palette' is not assignable to type 'Palette'.
     setPalettes((prevPalettes: Palette[]) => {
-      const isDuplicate = prevPalettes.some(
+      const newPaletteObj = { ...newPalette, used: true };
+      const existingIndex = prevPalettes.findIndex(
         (p) => JSON.stringify(p.colors) === newPaletteKey
       );
 
-      const newPaletteObj = { ...newPalette, used: true };
+      if (existingIndex === -1) {
+        const updatedPalettes = [newPaletteObj, ...prevPalettes];
+        return updatedPalettes.length > numSamples
+          ? updatedPalettes.slice(0, numSamples)
+          : updatedPalettes;
+      } else {
+        const updatedPalettes = [...prevPalettes];
+        updatedPalettes.splice(existingIndex, 1);
+        updatedPalettes.unshift(newPaletteObj);
 
-      if (!isDuplicate) {
-        return [newPaletteObj, ...prevPalettes.slice(0, numSamples - 1)];
+        return updatedPalettes;
       }
-
-      return prevPalettes.map((palette) => {
-        if (JSON.stringify(palette.colors) === newPaletteKey) {
-          return { ...palette, used: true };
-        }
-        return palette;
-      });
     });
   };
+
+  const totalPossiblePalettes = useMemo(
+    () => calculateTotalPossiblePalettes(inputColors.length, paletteSize),
+    [inputColors, paletteSize]
+  );
 
   return (
     <div className="space-y-8">
@@ -249,6 +258,7 @@ export default function PaletteGenerator() {
 
       <PaletteControls
         paletteSize={paletteSize}
+        totalPossiblePalettes={totalPossiblePalettes}
         numSamples={numSamples}
         onPaletteSizeChange={handlePaletteSizeChange}
         onNumSamplesChange={handleNumSamplesChange}

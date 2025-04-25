@@ -1,16 +1,16 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { ColorInputs } from "./ColorInputs";
 import { PaletteControls } from "./PaletteControls";
 import { PaletteList } from "./PaletteList";
-import {
-  calculateTotalPossiblePalettes,
-  generatePalettes,
-} from "../utils/colorUtils";
-import { useLocalStorage } from "../hooks/useLocalStorage";
 import { Palette } from "../types";
-import { debounce } from "lodash";
 import { toast } from "sonner";
 import { AddUsedPalette } from "./AddUsedPalette";
+import { ColorStatistics } from "./ColorStatistics";
+import { usePalettes } from "@/hooks/usePalettes";
+import { usePaletteGeneration } from "@/hooks/usePaletteGeneration";
+
+const DEFAULT_PALETTE_SIZE = 3;
+const DEFAULT_NUM_SAMPLES = 50;
 
 const defaultColors = [
   "#dbdbd9", // white
@@ -22,91 +22,34 @@ const defaultColors = [
 ];
 
 export default function PaletteGenerator() {
-  const [inputColors, setInputColors] = useLocalStorage(
-    "inputColors",
-    defaultColors
-  );
-  const [paletteSize, setPaletteSize, paletteSizeInitialized] = useLocalStorage(
-    "paletteSize",
-    3
-  );
-  const [numSamples, setNumSamples, numSamplesInitialized] = useLocalStorage(
-    "numSamples",
-    50
-  );
-  const [palettes, setPalettes] = useLocalStorage<Palette[]>("palettes", []);
-  const [usedPalettes, setUsedPalettes] = useLocalStorage<string[]>(
-    "usedPalettes",
-    []
+  const {
+    inputColors,
+    setInputColors,
+    paletteSize,
+    setPaletteSize,
+    numSamples,
+    setNumSamples,
+    palettes,
+    setPalettes,
+    usedPalettes,
+    setUsedPalettes,
+    validColors,
+    totalPossiblePalettes,
+  } = usePalettes(defaultColors, DEFAULT_PALETTE_SIZE, DEFAULT_NUM_SAMPLES);
+
+  const { handleGeneratePalettes, colorStatistics } = usePaletteGeneration(
+    validColors,
+    paletteSize,
+    numSamples,
+    palettes,
+    setPalettes,
+    usedPalettes
   );
 
   const [isShuffling, setIsShuffling] = useState(false);
   const [isAddPaletteDialogOpen, setIsAddPaletteDialogOpen] = useState(false);
 
-  const validColors = useMemo(
-    () => inputColors.filter((color) => color.trim() !== ""),
-    [inputColors]
-  );
-
   const memoizedPalettes = useMemo(() => palettes, [palettes]);
-
-  const generate = useCallback(() => {
-    const usedPalettesToKeep = palettes.filter((p) => p.used);
-    let numPalettesToGenerate = numSamples - usedPalettesToKeep.length;
-
-    let newPalettes: Palette[] = [];
-
-    while (numPalettesToGenerate > 0) {
-      const generated = generatePalettes(
-        validColors,
-        paletteSize,
-        numPalettesToGenerate
-      );
-
-      const filteredGenerated = generated.filter((newPalette) => {
-        const newPaletteKey = JSON.stringify(newPalette.colors);
-        return (
-          !usedPalettesToKeep.some(
-            (usedPalette) =>
-              JSON.stringify(usedPalette.colors) === newPaletteKey
-          ) &&
-          !newPalettes.some(
-            (existingNewPalette) =>
-              JSON.stringify(existingNewPalette.colors) === newPaletteKey
-          )
-        );
-      });
-
-      newPalettes = [...newPalettes, ...filteredGenerated];
-      numPalettesToGenerate =
-        numSamples - usedPalettesToKeep.length - newPalettes.length;
-    }
-
-    const combinedPalettes = [...usedPalettesToKeep, ...newPalettes];
-    const finalPalettes = combinedPalettes.slice(0, numSamples);
-
-    const updatedPalettes = finalPalettes.map((palette) => {
-      const paletteKey = JSON.stringify(palette.colors);
-      return {
-        ...palette,
-        used: usedPalettes.includes(paletteKey),
-      };
-    });
-
-    setPalettes(updatedPalettes);
-  }, [
-    validColors,
-    paletteSize,
-    numSamples,
-    usedPalettes,
-    setPalettes,
-    palettes,
-  ]);
-
-  const handleGeneratePalettes = useMemo(
-    () => debounce(generate, 300),
-    [generate]
-  );
 
   const handleColorChange = useCallback(
     (index: number, color: string) => {
@@ -141,18 +84,21 @@ export default function PaletteGenerator() {
 
       // @ts-expect-error -  Argument of type '(prevUsedPalettes: string[]) => string[]' is not assignable to parameter of type 'string[]'.
       setUsedPalettes((prevUsedPalettes: string[]) => {
-        return palette.used
+        const newUsedPalettes = palette.used
           ? prevUsedPalettes.filter((key) => key !== paletteKey)
-          : [...prevUsedPalettes, paletteKey];
+          : [paletteKey, ...prevUsedPalettes];
+
+        return newUsedPalettes;
       });
 
       // @ts-expect-error -  Argument of type '(prevPalettes: Palette[]) => Palette[]' is not assignable to parameter of type 'Palette[]'.
       setPalettes((prevPalettes: Palette[]) => {
         const newPalettes = [...prevPalettes];
-        newPalettes[index] = {
-          ...newPalettes[index],
-          used: !newPalettes[index].used,
-        };
+        newPalettes.splice(index, 1);
+        newPalettes.unshift({
+          ...palette,
+          used: !palette.used,
+        });
         return newPalettes;
       });
     },
@@ -184,20 +130,6 @@ export default function PaletteGenerator() {
     setUsedPalettes([]);
   }, [setPalettes, setUsedPalettes]);
 
-  useEffect(() => {
-    if (!paletteSizeInitialized) {
-      setPaletteSize(3);
-    }
-    if (!numSamplesInitialized) {
-      setNumSamples(50);
-    }
-  }, [
-    numSamplesInitialized,
-    setNumSamples,
-    paletteSizeInitialized,
-    setPaletteSize,
-  ]);
-
   const handleClearUsed = () => {
     if (usedPalettes.length === 0) {
       toast.error("No palettes to clear");
@@ -222,7 +154,7 @@ export default function PaletteGenerator() {
       const keyExists = prevUsedPalettes.includes(newPaletteKey);
       return keyExists
         ? prevUsedPalettes
-        : [...prevUsedPalettes, newPaletteKey];
+        : [newPaletteKey, ...prevUsedPalettes];
     });
 
     // @ts-expect-error -  Argument of type '(prevPalettes: Palette[]) => Palette[]' is not assignable to parameter of type 'Palette[]'. Type 'Palette' is not assignable to type 'Palette'.
@@ -247,13 +179,8 @@ export default function PaletteGenerator() {
     });
   };
 
-  const totalPossiblePalettes = useMemo(
-    () => calculateTotalPossiblePalettes(inputColors.length, paletteSize),
-    [inputColors, paletteSize]
-  );
-
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       <ColorInputs colors={inputColors} onColorChange={handleColorChange} />
 
       <PaletteControls
@@ -268,6 +195,8 @@ export default function PaletteGenerator() {
         onClearAll={handleClearPalettes}
         isShuffling={isShuffling}
       />
+
+      <ColorStatistics statistics={colorStatistics} />
 
       <PaletteList
         palettes={memoizedPalettes}

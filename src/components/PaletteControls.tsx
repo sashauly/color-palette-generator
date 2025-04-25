@@ -12,6 +12,9 @@ import {
 import { Button } from "./ui/button";
 import { Settings, Shuffle, Sparkles, Trash2 } from "lucide-react";
 
+const MIN_PALETTE_SIZE = 2;
+const MAX_PALETTE_SIZE = 6;
+
 interface PaletteControlsProps {
   paletteSize: number;
   totalPossiblePalettes: number;
@@ -58,8 +61,8 @@ export const PaletteControls: React.FC<PaletteControlsProps> = ({
             <Input
               type="range"
               id="palette-size"
-              min="2"
-              max="6"
+              min={MIN_PALETTE_SIZE}
+              max={MAX_PALETTE_SIZE}
               value={paletteSize}
               onChange={(e) => onPaletteSizeChange(Number(e.target.value))}
               className="flex-1"

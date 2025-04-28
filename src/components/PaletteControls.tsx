@@ -55,7 +55,7 @@ export const PaletteControls: React.FC<PaletteControlsProps> = ({
   const [isOpen, setIsOpen] = useLocalStorage("settingsOpen", true);
 
   return (
-    <Card>
+    <Card className="py-4">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

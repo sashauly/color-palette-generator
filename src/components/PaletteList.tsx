@@ -33,7 +33,7 @@ export const PaletteList: React.FC<PaletteListProps> = ({
   };
 
   return (
-    <Card>
+    <Card className="py-4">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <PaletteIcon />
@@ -45,7 +45,7 @@ export const PaletteList: React.FC<PaletteListProps> = ({
         </CardDescription>
         <Button onClick={handleOpenAddPaletteDialog}>Add Used Palette</Button>
       </CardHeader>
-      <CardContent className="pt-6">
+      <CardContent>
         {palettes.length === 0 ? (
           <div className="text-center py-8">No palettes generated yet.</div>
         ) : (
@@ -60,8 +60,8 @@ export const PaletteList: React.FC<PaletteListProps> = ({
               <li
                 key={palette.colors.join("-") + index}
                 className={`
-                flex items-center p-3 rounded border transition-all duration-200
-                hover:shadow-md cursor-pointer
+                flex items-center p-2 rounded border transition-all duration-200
+                hover:shadow-md cursor-pointer justify-around
                 ${
                   palette.used
                     ? "border-gray-300 bg-gray-100 dark:border-gray-600 dark:bg-gray-700"

@@ -53,7 +53,6 @@ export default function PaletteGenerator() {
 
   const handleColorChange = useCallback(
     (index: number, color: string) => {
-      // @ts-expect-error -  Argument of type '(prevColors: string[]) => string[]' is not assignable to parameter of type 'string[]'.
       setInputColors((prevColors: string[]) => {
         const newColors = [...prevColors];
         newColors[index] = color;
@@ -82,23 +81,18 @@ export default function PaletteGenerator() {
       const palette = memoizedPalettes[index];
       const paletteKey = JSON.stringify(palette.colors);
 
-      // @ts-expect-error -  Argument of type '(prevUsedPalettes: string[]) => string[]' is not assignable to parameter of type 'string[]'.
       setUsedPalettes((prevUsedPalettes: string[]) => {
-        const newUsedPalettes = palette.used
+        return palette.used
           ? prevUsedPalettes.filter((key) => key !== paletteKey)
-          : [paletteKey, ...prevUsedPalettes];
-
-        return newUsedPalettes;
+          : [...prevUsedPalettes, paletteKey];
       });
 
-      // @ts-expect-error -  Argument of type '(prevPalettes: Palette[]) => Palette[]' is not assignable to parameter of type 'Palette[]'.
       setPalettes((prevPalettes: Palette[]) => {
         const newPalettes = [...prevPalettes];
-        newPalettes.splice(index, 1);
-        newPalettes.unshift({
-          ...palette,
-          used: !palette.used,
-        });
+        newPalettes[index] = {
+          ...newPalettes[index],
+          used: !newPalettes[index].used,
+        };
         return newPalettes;
       });
     },
@@ -108,7 +102,6 @@ export default function PaletteGenerator() {
   const handleShuffle = useCallback(() => {
     setIsShuffling(true);
 
-    // @ts-expect-error -  Argument of type '(prevPalettes: Palette[]) => Palette[]' is not assignable to parameter of type 'Palette[]'.
     setPalettes((prevPalettes: Palette[]) => {
       const usedPalettes = prevPalettes.filter((p) => p.used);
       const unusedPalettes = prevPalettes.filter((p) => !p.used);
@@ -149,15 +142,13 @@ export default function PaletteGenerator() {
   const handleAddPalette = (newPalette: Palette) => {
     const newPaletteKey = JSON.stringify(newPalette.colors);
 
-    // @ts-expect-error -  Argument of type '(prevUsedPalettes: string[]) => string[]' is not assignable to parameter of type 'string[]'. Type 'string' is not assignable to type 'string[]'.
     setUsedPalettes((prevUsedPalettes: string[]) => {
       const keyExists = prevUsedPalettes.includes(newPaletteKey);
       return keyExists
         ? prevUsedPalettes
-        : [newPaletteKey, ...prevUsedPalettes];
+        : [...prevUsedPalettes, newPaletteKey];
     });
 
-    // @ts-expect-error -  Argument of type '(prevPalettes: Palette[]) => Palette[]' is not assignable to parameter of type 'Palette[]'. Type 'Palette' is not assignable to type 'Palette'.
     setPalettes((prevPalettes: Palette[]) => {
       const newPaletteObj = { ...newPalette, used: true };
       const existingIndex = prevPalettes.findIndex(
@@ -165,7 +156,7 @@ export default function PaletteGenerator() {
       );
 
       if (existingIndex === -1) {
-        const updatedPalettes = [newPaletteObj, ...prevPalettes];
+        const updatedPalettes = [...prevPalettes, newPaletteObj];
         return updatedPalettes.length > numSamples
           ? updatedPalettes.slice(0, numSamples)
           : updatedPalettes;
@@ -180,7 +171,7 @@ export default function PaletteGenerator() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       <ColorInputs colors={inputColors} onColorChange={handleColorChange} />
 
       <PaletteControls

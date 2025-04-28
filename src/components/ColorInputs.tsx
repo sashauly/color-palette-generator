@@ -31,7 +31,7 @@ export const ColorInputs: React.FC<ColorInputsProps> = ({
   const [isOpen, setIsOpen] = useLocalStorage("colorInputsOpen", true);
 
   return (
-    <Card>
+    <Card className="py-4">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

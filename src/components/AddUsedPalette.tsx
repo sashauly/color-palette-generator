@@ -19,6 +19,7 @@ import { useMediaQuery } from "@uidotdev/usehooks";
 import { toast } from "sonner";
 import { useCallback, useEffect, useState } from "react";
 import { Palette } from "@/types";
+import { isColorDark } from "@/utils/colorUtils";
 
 interface AddUsedPaletteProps {
   isOpen: boolean;
@@ -108,6 +109,7 @@ export function AddUsedPalette({
         />
         <DrawerFooter className="pt-2">
           <Button
+            variant="default"
             onClick={handleAddPalette}
             disabled={selectedColors.length !== paletteSize}
           >
@@ -138,9 +140,9 @@ function AddUsedPaletteForm({
       {validColors.map((color) => (
         <Button
           key={color}
-          className={`w-12 h-12 relative ${
+          className={`min-w-12 min-h-12 relative ${
             selectedColors.includes(color)
-              ? "outline-2 outline-solid outline-accent opacity-75"
+              ? "outline-2 outline-solid outline-border scale-105"
               : "outline-none opacity-100"
           }`}
           style={{
@@ -149,7 +151,11 @@ function AddUsedPaletteForm({
           onClick={() => handleColorSelect(color)}
         >
           {selectedColors.includes(color) && (
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white animate-pulse">
+            <div
+              className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ${
+                isColorDark(color) ? "text-white" : "text-black"
+              }`}
+            >
               {selectedColors.indexOf(color) + 1}
             </div>
           )}

@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/color-palette-generator/sw.js', { scope: '/color-palette-generator/' })})}

@@ -2,50 +2,37 @@ import type { Palette, ColorStatisticsType } from "../types";
 
 interface CalculateColorStatisticsProps {
   palettes: Palette[];
+  paletteSize: number;
   inputColors: string[];
 }
 
 const calculateColorStatistics = ({
   palettes,
+  paletteSize,
   inputColors,
 }: CalculateColorStatisticsProps): ColorStatisticsType => {
   const usedPalettes = palettes.filter((palette) => palette.used);
   const statistics: ColorStatisticsType = {};
 
+  for (let i = 1; i <= paletteSize; i++) {
+    statistics[i] = {};
+    inputColors.forEach((color) => {
+      statistics[i][color] = 0;
+    });
+  }
+
   usedPalettes.forEach((palette) => {
-    const allInputColors = new Set([...inputColors, "absent"]);
-
-    const allPositions = new Set(
-      Array.from({ length: palette.colors.length }, (_, i) => i + 1)
-    );
-
-    allPositions.forEach((position) => {
-      const colorIndex = position - 1;
-
-      let color: string | null = null;
-      if (colorIndex < palette.colors.length) {
-        color = palette.colors[colorIndex];
+    palette.colors.forEach((color, index) => {
+      const position = index + 1;
+      if (statistics[position] && statistics[position][color] !== undefined) {
+         statistics[position][color]++;
       }
-
-      if (!statistics[position]) {
-        statistics[position] = {};
-        allInputColors.forEach((inputColor) => {
-          statistics[position][inputColor] = 0;
-        });
-      }
-
-      const colorToCount = color !== null ? color : "absent";
-
-      if (!statistics[position][colorToCount]) {
-        statistics[position][colorToCount] = 0;
-      }
-
-      statistics[position][colorToCount]++;
     });
   });
 
-  Object.keys(statistics).forEach((position) => {
-    const positionStats = statistics[Number(position)];
+  Object.keys(statistics).forEach((positionKey) => {
+    const position = Number(positionKey);
+    const positionStats = statistics[position];
 
     const sortedColors = Object.entries(positionStats)
       .sort(([, countA], [, countB]) => countB - countA)
@@ -54,7 +41,7 @@ const calculateColorStatistics = ({
         return obj;
       }, {});
 
-    statistics[Number(position)] = sortedColors;
+    statistics[position] = sortedColors;
   });
 
   return statistics;

@@ -71,8 +71,8 @@ export function usePaletteGeneration(
   );
 
   const colorStatistics = useMemo(
-    () => calculateColorStatistics({ palettes, inputColors: validColors }),
-    [palettes, validColors]
+    () => calculateColorStatistics({ palettes, paletteSize, inputColors: validColors }),
+    [palettes, paletteSize, validColors]
   );
 
   return {

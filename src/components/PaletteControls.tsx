@@ -22,7 +22,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { useLocalStorage } from "@uidotdev/usehooks";
 
 const MIN_PALETTE_SIZE = 2;
 const MAX_PALETTE_SIZE = 6;

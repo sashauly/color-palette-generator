@@ -17,7 +17,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { useLocalStorage } from "@uidotdev/usehooks";
 
 interface ColorInputsProps {
   colors: string[];

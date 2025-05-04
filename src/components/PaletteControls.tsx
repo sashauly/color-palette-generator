@@ -27,6 +27,7 @@ import ImportLocalStorage from "./ImportLocalStorage";
 import ExportLocalStorage from "./ExportLocalStorage";
 import { LocalStorageData } from "@/types";
 import { toast } from "sonner";
+import MobilePaletteControls from "./MobilePaletteControls";
 
 const MIN_PALETTE_SIZE = 2;
 const MAX_PALETTE_SIZE = 6;
@@ -74,141 +75,156 @@ export const PaletteControls: React.FC<PaletteControlsProps> = ({
   );
 
   return (
-    <Card className="py-4">
-      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings />
-            Settings
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <ChevronsUpDown className="h-4 w-4" />
-                <span className="sr-only">Toggle</span>
+    <>
+      <Card className="py-4">
+        <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings />
+              Settings
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <ChevronsUpDown className="h-4 w-4" />
+                  <span className="sr-only">Toggle</span>
+                </Button>
+              </CollapsibleTrigger>
+            </CardTitle>
+            <CardDescription>
+              <p>Configure the palette generation process.</p>
+              <p>You can generate up to a {totalPossiblePalettes} palettes.</p>
+            </CardDescription>
+          </CardHeader>
+          <CollapsibleContent>
+            <CardContent>
+              <div className="space-y-2">
+                <Label
+                  htmlFor="palette-size"
+                  className="block text-sm font-medium"
+                >
+                  Palette Size
+                </Label>
+                <div className="flex items-center space-x-2">
+                  <Input
+                    type="range"
+                    id="palette-size"
+                    min={MIN_PALETTE_SIZE}
+                    max={MAX_PALETTE_SIZE}
+                    value={paletteSize}
+                    onChange={(e) =>
+                      onPaletteSizeChange(Number(e.target.value))
+                    }
+                    className="flex-1"
+                  />
+                  <span className="w-8 text-center font-medium">
+                    {paletteSize}
+                  </span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label
+                  htmlFor="num-samples"
+                  className="block text-sm font-medium"
+                >
+                  Number of Samples
+                </Label>
+                <div className="flex items-center space-x-2">
+                  <Input
+                    type="range"
+                    id="num-samples"
+                    min="10"
+                    max={totalPossiblePalettes}
+                    step="5"
+                    value={numSamples}
+                    onChange={(e) => onNumSamplesChange(Number(e.target.value))}
+                    className="flex-1"
+                  />
+                  <span className="w-8 text-center font-medium">
+                    {numSamples}
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter className="flex flex-wrap justify-center sm:justify-start gap-2">
+              <Button
+                onClick={onGenerate}
+                disabled={isGenerating}
+                className={`w-full sm:w-auto ${
+                  isGenerating ? "opacity-75 cursor-not-allowed" : ""
+                }`}
+              >
+                <Sparkles
+                  className={`${isGenerating ? "animate-pulse" : ""}`}
+                />
+                Generate
               </Button>
-            </CollapsibleTrigger>
-          </CardTitle>
-          <CardDescription>
-            <p>Configure the palette generation process.</p>
-            <p>You can generate up to a {totalPossiblePalettes} palettes.</p>
-          </CardDescription>
-        </CardHeader>
-        <CollapsibleContent>
-          <CardContent>
-            <div className="space-y-2">
-              <Label
-                htmlFor="palette-size"
-                className="block text-sm font-medium"
+
+              <Button
+                onClick={onShuffle}
+                disabled={isShuffling}
+                className={`w-full sm:w-auto ${
+                  isShuffling ? "opacity-75 cursor-not-allowed" : ""
+                }`}
               >
-                Palette Size
-              </Label>
-              <div className="flex items-center space-x-2">
-                <Input
-                  type="range"
-                  id="palette-size"
-                  min={MIN_PALETTE_SIZE}
-                  max={MAX_PALETTE_SIZE}
-                  value={paletteSize}
-                  onChange={(e) => onPaletteSizeChange(Number(e.target.value))}
-                  className="flex-1"
-                />
-                <span className="w-8 text-center font-medium">
-                  {paletteSize}
-                </span>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label
-                htmlFor="num-samples"
-                className="block text-sm font-medium"
+                <Shuffle className={`${isShuffling ? "animate-spin" : ""}`} />
+                Shuffle
+              </Button>
+
+              <Button
+                variant="destructive"
+                onClick={onClearUsed}
+                disabled={isClearing}
+                className={`w-full sm:w-auto ${
+                  isClearing ? "opacity-75 cursor-not-allowed" : ""
+                }`}
               >
-                Number of Samples
-              </Label>
-              <div className="flex items-center space-x-2">
-                <Input
-                  type="range"
-                  id="num-samples"
-                  min="10"
-                  max={totalPossiblePalettes}
-                  step="5"
-                  value={numSamples}
-                  onChange={(e) => onNumSamplesChange(Number(e.target.value))}
-                  className="flex-1"
-                />
-                <span className="w-8 text-center font-medium">
-                  {numSamples}
-                </span>
-              </div>
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-wrap justify-center sm:justify-start gap-2">
-            <Button
-              onClick={onGenerate}
-              disabled={isGenerating}
-              className={`w-full sm:w-auto ${
-                isGenerating ? "opacity-75 cursor-not-allowed" : ""
-              }`}
-            >
-              <Sparkles className={`${isGenerating ? "animate-pulse" : ""}`} />
-              Generate
-            </Button>
+                <Trash2 className={`${isClearing ? "animate-pulse" : ""}`} />
+                Clear Used
+              </Button>
 
-            <Button
-              onClick={onShuffle}
-              disabled={isShuffling}
-              className={`w-full sm:w-auto ${
-                isShuffling ? "opacity-75 cursor-not-allowed" : ""
-              }`}
-            >
-              <Shuffle className={`${isShuffling ? "animate-spin" : ""}`} />
-              Shuffle
-            </Button>
+              <Button
+                variant="destructive"
+                className="w-full sm:w-auto"
+                onClick={onClearAll}
+                disabled={isClearing}
+              >
+                <Trash2 className={`${isClearing ? "animate-pulse" : ""}`} />
+                Clear
+              </Button>
 
-            <Button
-              variant="destructive"
-              onClick={onClearUsed}
-              disabled={isClearing}
-              className={`w-full sm:w-auto ${
-                isClearing ? "opacity-75 cursor-not-allowed" : ""
-              }`}
-            >
-              <Trash2 className={`${isClearing ? "animate-pulse" : ""}`} />
-              Clear Used
-            </Button>
+              <ImportLocalStorage
+                isImporting={isImporting}
+                setIsImporting={setIsImporting}
+                onImportSuccess={() =>
+                  toast.success("Imported local storage data successfully.")
+                }
+                onImportError={(error) =>
+                  toast.error("Error importing local storage data.", error)
+                }
+              />
 
-            <Button
-              variant="destructive"
-              className="w-full sm:w-auto"
-              onClick={onClearAll}
-              disabled={isClearing}
-            >
-              <Trash2 className={`${isClearing ? "animate-pulse" : ""}`} />
-              Clear
-            </Button>
+              <ExportLocalStorage
+                isExporting={isExporting}
+                setIsExporting={setIsExporting}
+                onExportSuccess={() =>
+                  toast.success("Exported local storage data successfully.")
+                }
+                onExportError={(error) =>
+                  toast.error("Error exporting local storage data.", error)
+                }
+              />
+            </CardFooter>
+          </CollapsibleContent>
+        </Collapsible>
+      </Card>
 
-            <ImportLocalStorage
-              isImporting={isImporting}
-              setIsImporting={setIsImporting}
-              onImportSuccess={() =>
-                toast.success("Imported local storage data successfully.")
-              }
-              onImportError={(error) =>
-                toast.error("Error importing local storage data.", error)
-              }
-            />
-
-            <ExportLocalStorage
-              isExporting={isExporting}
-              setIsExporting={setIsExporting}
-              onExportSuccess={() =>
-                toast.success("Exported local storage data successfully.")
-              }
-              onExportError={(error) =>
-                toast.error("Error exporting local storage data.", error)
-              }
-            />
-          </CardFooter>
-        </CollapsibleContent>
-      </Collapsible>
-    </Card>
+      <div className="md:hidden block">
+        <MobilePaletteControls
+          onShuffle={onShuffle}
+          onGenerate={onGenerate}
+          isGenerating={isGenerating}
+          isShuffling={isShuffling}
+        />
+      </div>
+    </>
   );
 };

@@ -23,6 +23,10 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useLocalStorage } from "@uidotdev/usehooks";
+import ImportLocalStorage from "./ImportLocalStorage";
+import ExportLocalStorage from "./ExportLocalStorage";
+import { LocalStorageData } from "@/types";
+import { toast } from "sonner";
 
 const MIN_PALETTE_SIZE = 2;
 const MAX_PALETTE_SIZE = 6;
@@ -37,7 +41,13 @@ interface PaletteControlsProps {
   onClearUsed: () => void;
   onGenerate: () => void;
   onClearAll: () => void;
+  isGenerating: boolean;
   isShuffling: boolean;
+  isClearing: boolean;
+  isImporting: boolean;
+  setIsImporting: React.Dispatch<React.SetStateAction<boolean>>;
+  isExporting: boolean;
+  setIsExporting: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export const PaletteControls: React.FC<PaletteControlsProps> = ({
@@ -50,9 +60,18 @@ export const PaletteControls: React.FC<PaletteControlsProps> = ({
   onClearUsed,
   onGenerate,
   onClearAll,
+  isGenerating,
   isShuffling,
+  isClearing,
+  isImporting,
+  setIsImporting,
+  isExporting,
+  setIsExporting,
 }) => {
-  const [isOpen, setIsOpen] = useLocalStorage("settingsOpen", true);
+  const [isOpen, setIsOpen] = useLocalStorage<LocalStorageData["settingsOpen"]>(
+    "settingsOpen",
+    true
+  );
 
   return (
     <Card className="py-4">
@@ -122,38 +141,71 @@ export const PaletteControls: React.FC<PaletteControlsProps> = ({
             </div>
           </CardContent>
           <CardFooter className="flex flex-wrap justify-center sm:justify-start gap-2">
-            <Button onClick={onGenerate} className="w-full sm:w-auto">
-              <Sparkles />
+            <Button
+              onClick={onGenerate}
+              disabled={isGenerating}
+              className={`w-full sm:w-auto ${
+                isGenerating ? "opacity-75 cursor-not-allowed" : ""
+              }`}
+            >
+              <Sparkles className={`${isGenerating ? "animate-pulse" : ""}`} />
               Generate
             </Button>
 
             <Button
               onClick={onShuffle}
               disabled={isShuffling}
-              className={`w-full sm:w-auto
-          ${isShuffling ? "opacity-75" : ""}
-        `}
+              className={`w-full sm:w-auto ${
+                isShuffling ? "opacity-75 cursor-not-allowed" : ""
+              }`}
             >
               <Shuffle className={`${isShuffling ? "animate-spin" : ""}`} />
               Shuffle
             </Button>
+
             <Button
               variant="destructive"
               onClick={onClearUsed}
-              className="w-full sm:w-auto"
+              disabled={isClearing}
+              className={`w-full sm:w-auto ${
+                isClearing ? "opacity-75 cursor-not-allowed" : ""
+              }`}
             >
-              <Trash2 />
+              <Trash2 className={`${isClearing ? "animate-pulse" : ""}`} />
               Clear Used
             </Button>
+
             <Button
               variant="destructive"
               className="w-full sm:w-auto"
               onClick={onClearAll}
-              disabled={isShuffling}
+              disabled={isClearing}
             >
-              <Trash2 />
+              <Trash2 className={`${isClearing ? "animate-pulse" : ""}`} />
               Clear
             </Button>
+
+            <ImportLocalStorage
+              isImporting={isImporting}
+              setIsImporting={setIsImporting}
+              onImportSuccess={() =>
+                toast.success("Imported local storage data successfully.")
+              }
+              onImportError={(error) =>
+                toast.error("Error importing local storage data.", error)
+              }
+            />
+
+            <ExportLocalStorage
+              isExporting={isExporting}
+              setIsExporting={setIsExporting}
+              onExportSuccess={() =>
+                toast.success("Exported local storage data successfully.")
+              }
+              onExportError={(error) =>
+                toast.error("Error exporting local storage data.", error)
+              }
+            />
           </CardFooter>
         </CollapsibleContent>
       </Collapsible>

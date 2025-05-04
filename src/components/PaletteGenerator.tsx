@@ -37,18 +37,22 @@ export default function PaletteGenerator() {
     totalPossiblePalettes,
   } = usePalettes(defaultColors, DEFAULT_PALETTE_SIZE, DEFAULT_NUM_SAMPLES);
 
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isShuffling, setIsShuffling] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
+  const [isAddPaletteDialogOpen, setIsAddPaletteDialogOpen] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
   const { handleGeneratePalettes, colorStatistics } = usePaletteGeneration(
     validColors,
     paletteSize,
     numSamples,
     palettes,
     setPalettes,
-    usedPalettes
+    usedPalettes,
+    setIsGenerating
   );
-
-  const [isShuffling, setIsShuffling] = useState(false);
-  const [isAddPaletteDialogOpen, setIsAddPaletteDialogOpen] = useState(false);
-
   const memoizedPalettes = useMemo(() => palettes, [palettes]);
 
   const handleColorChange = useCallback(
@@ -119,16 +123,20 @@ export default function PaletteGenerator() {
   }, [setPalettes]);
 
   const handleClearPalettes = useCallback(() => {
+    setIsClearing(true);
     setPalettes([]);
     setUsedPalettes([]);
+    setTimeout(() => setIsClearing(false), 500);
   }, [setPalettes, setUsedPalettes]);
 
   const handleClearUsed = () => {
     if (usedPalettes.length === 0) {
       toast.error("No palettes to clear");
     }
+    setIsClearing(true);
     setUsedPalettes([]);
     setPalettes(palettes.map((palette) => ({ ...palette, used: false })));
+    setTimeout(() => setIsClearing(false), 500);
   };
 
   const handleOpenAddPaletteDialog = () => {
@@ -184,7 +192,13 @@ export default function PaletteGenerator() {
         onShuffle={handleShuffle}
         onClearUsed={handleClearUsed}
         onClearAll={handleClearPalettes}
+        isGenerating={isGenerating}
         isShuffling={isShuffling}
+        isClearing={isClearing}
+        isImporting={isImporting}
+        setIsImporting={setIsImporting}
+        isExporting={isExporting}
+        setIsExporting={setIsExporting}
       />
 
       <ColorStatistics statistics={colorStatistics} />

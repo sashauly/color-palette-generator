@@ -18,6 +18,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useLocalStorage } from "@uidotdev/usehooks";
+import { LocalStorageData } from "@/types";
 
 interface ColorInputsProps {
   colors: string[];
@@ -28,7 +29,9 @@ export const ColorInputs: React.FC<ColorInputsProps> = ({
   colors,
   onColorChange,
 }) => {
-  const [isOpen, setIsOpen] = useLocalStorage("colorInputsOpen", true);
+  const [isOpen, setIsOpen] = useLocalStorage<
+    LocalStorageData["colorInputsOpen"]
+  >("colorInputsOpen", true);
 
   return (
     <Card className="py-4">

@@ -1,4 +1,4 @@
-import type { Palette } from "@/types";
+import { type LocalStorageData } from "@/types";
 import { useLocalStorage } from "@uidotdev/usehooks";
 import { useEffect, useMemo } from "react";
 import { calculateTotalPossiblePalettes } from "@/utils/colorUtils";
@@ -8,23 +8,22 @@ export function usePalettes(
   defaultPaletteSize: number,
   defaultNumSamples: number
 ) {
-  const [inputColors, setInputColors] = useLocalStorage(
-    "inputColors",
-    initialColors
-  );
-  const [paletteSize, setPaletteSize] = useLocalStorage(
-    "paletteSize",
-    defaultPaletteSize
-  );
-  const [numSamples, setNumSamples] = useLocalStorage(
-    "numSamples",
-    defaultNumSamples
-  );
-  const [palettes, setPalettes] = useLocalStorage<Palette[]>("palettes", []);
-  const [usedPalettes, setUsedPalettes] = useLocalStorage<string[]>(
-    "usedPalettes",
+  const [inputColors, setInputColors] = useLocalStorage<
+    LocalStorageData["inputColors"]
+  >("inputColors", initialColors);
+  const [paletteSize, setPaletteSize] = useLocalStorage<
+    LocalStorageData["paletteSize"]
+  >("paletteSize", defaultPaletteSize);
+  const [numSamples, setNumSamples] = useLocalStorage<
+    LocalStorageData["numSamples"]
+  >("numSamples", defaultNumSamples);
+  const [palettes, setPalettes] = useLocalStorage<LocalStorageData["palettes"]>(
+    "palettes",
     []
   );
+  const [usedPalettes, setUsedPalettes] = useLocalStorage<
+    LocalStorageData["usedPalettes"]
+  >("usedPalettes", []);
 
   useEffect(() => {
     if (!paletteSize) {

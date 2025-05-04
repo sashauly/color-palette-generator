@@ -1,5 +1,5 @@
 import React from "react";
-import type { ColorStatisticsType } from "../types";
+import { LocalStorageData, type ColorStatisticsType } from "../types";
 import {
   Card,
   CardContent,
@@ -23,7 +23,9 @@ interface ColorStatisticsProps {
 export const ColorStatistics: React.FC<ColorStatisticsProps> = ({
   statistics,
 }) => {
-  const [isOpen, setIsOpen] = useLocalStorage("colorStatisticsOpen", true);
+  const [isOpen, setIsOpen] = useLocalStorage<
+    LocalStorageData["colorStatisticsOpen"]
+  >("colorStatisticsOpen", true);
 
   return (
     <Card className="py-4">

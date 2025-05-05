@@ -1,6 +1,4 @@
-import React from "react";
-import type { Palette } from "../types";
-import { Checkbox } from "@/components/ui/checkbox";
+import React, { useState } from "react";
 import {
   Card,
   CardContent,
@@ -8,112 +6,158 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Palette as PaletteIcon } from "lucide-react";
+import { Shuffle, Sparkles, Trash } from "lucide-react";
 import { Button } from "./ui/button";
+import { useAppDispatch, useAppSelector } from "@/store/store";
+import {
+  clearAllPalettes,
+  clearUsedPalettes,
+  generatePalettesForPage,
+  setPalettes,
+} from "@/store/paletteSlice";
+import PaletteItem from "./PaletteItem";
+import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
+import { toggleAddUsedPaletteDialogOpen } from "@/store/uiSlice";
+import { AddUsedPaletteDialog } from "./AddUsedPalette";
 
-interface PaletteListProps {
-  palettes: Palette[];
-  onPaletteToggle: (index: number) => void;
-  isShuffling: boolean;
-  handleOpenAddPaletteDialog: () => void;
-}
+import { formatBigInt, shuffleColors } from "@/utils/helpers";
+import MobilePaletteControls from "./MobilePaletteControls";
 
-export const PaletteList: React.FC<PaletteListProps> = ({
-  palettes,
-  onPaletteToggle,
-  isShuffling,
-  handleOpenAddPaletteDialog,
-}) => {
-  const getColorSize = () => {
-    const baseSize = "clamp(2.5rem, 4vw, 3.5rem)";
-    return {
-      width: baseSize,
-      height: baseSize,
-    };
+export const PaletteList: React.FC = () => {
+  const { generatedPalettes, totalCombinations } = useAppSelector(
+    (state) => state.palette
+  );
+  const dispatch = useAppDispatch();
+  const [filter, setFilter] = useState("all");
+
+  const handleShufflePalettes = () => {
+    if (generatedPalettes.length === 0) return;
+
+    const shuffled = shuffleColors(generatedPalettes);
+    dispatch(setPalettes(shuffled));
   };
 
+  const handleClearAllPalettes = () => {
+    dispatch(clearAllPalettes());
+    dispatch(setPalettes([]));
+  };
+
+  const handleClearUsedPalettes = () => {
+    dispatch(clearUsedPalettes());
+  };
+
+  const handleOpenAddPaletteDialog = () => {
+    dispatch(toggleAddUsedPaletteDialogOpen());
+  };
+
+  const filteredPalettes = generatedPalettes.filter((palette) => {
+    if (filter === "used") return palette.used;
+    if (filter === "unused") return !palette.used;
+    return true;
+  });
+
   return (
-    <Card className="py-4">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <PaletteIcon />
-          Generated Palettes
-        </CardTitle>
-        <CardDescription>
-          {palettes.length} palettes generated. Check the box to mark a palette
-          as used.
-        </CardDescription>
-        <Button onClick={handleOpenAddPaletteDialog}>Add Used Palette</Button>
-      </CardHeader>
-      <CardContent>
-        {palettes.length === 0 ? (
-          <div className="text-center py-8">No palettes generated yet.</div>
-        ) : (
-          <ul
-            className={`
-          transition-opacity duration-200 grid gap-4
-          ${isShuffling ? "opacity-50" : "opacity-100"}
-          md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4
-        `}
-          >
-            {palettes.map((palette, index) => (
-              <li
-                key={palette.colors.join("-") + index}
-                className={`
-                flex items-center p-2 rounded border transition-all duration-200
-                hover:shadow-md cursor-pointer justify-around
-                ${
-                  palette.used
-                    ? "border-gray-300 bg-gray-100 dark:border-gray-600 dark:bg-gray-700"
-                    : "border-gray-200 bg-white dark:border-gray-700"
-                }
-              `}
+    <>
+      <Card className="py-4">
+        <CardHeader>
+          <CardTitle className="flex flex-wrap justify-between items-center gap-2">
+            <div className="flex items-center gap-2">Color Palettes</div>
+            <div className="flex flex-wrap gap-2">
+              {/* The "Generate" button now implicitly triggers generation
+                  by changing inputColors or paletteSize */}
+              {/* You might keep a "Regenerate Current Page" button if needed */}
+              <Button
+                onClick={() => dispatch(generatePalettesForPage())}
+                variant="default"
+                className="flex-shrink-0"
               >
-                <Checkbox
-                  id={`palette-${index}`}
-                  checked={palette.used}
-                  onCheckedChange={() => onPaletteToggle(index)}
-                  className="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 mr-3"
-                />
+                <Sparkles className="mr-2 h-4 w-4" />
+                Generate
+              </Button>
+              <Button
+                onClick={handleShufflePalettes}
+                variant="outline"
+                disabled={generatedPalettes.length === 0}
+                className="flex-shrink-0"
+              >
+                <Shuffle className="mr-2 h-4 w-4" />
+                Shuffle
+              </Button>
+            </div>
+          </CardTitle>
+          <CardDescription>
+            <span>
+              Total possible unique palettes:{" "}
+              {typeof totalCombinations === "bigint"
+                ? formatBigInt(totalCombinations)
+                : totalCombinations}
+            </span>
 
-                <label
-                  htmlFor={`palette-${index}`}
-                  className={`
-                  flex-1 flex items-center cursor-pointer
-                  ${
-                    palette.used
-                      ? "line-through text-gray-500 dark:text-gray-400"
-                      : ""
-                  }
-                `}
-                >
-                  <span className="mr-2">{index + 1}.</span>
+            {totalCombinations === 0 && (
+              <span>
+                Adjust input colors and palette size to generate palettes.
+              </span>
+            )}
+          </CardDescription>
+          <div className="flex flex-wrap gap-2 justify-between items-center">
+            <div className="flex flex-wrap gap-2">
+              <Button
+                onClick={handleClearAllPalettes}
+                variant="outline"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
+                disabled={
+                  generatedPalettes.length === 0 && totalCombinations === 0
+                }
+              >
+                <Trash className="mr-2 h-4 w-4" />
+                Clear All
+              </Button>
+              <Button
+                onClick={handleClearUsedPalettes}
+                variant="outline"
+                className="flex-shrink-0"
+                disabled={!generatedPalettes.some((p) => p.used)}
+              >
+                Clear Used
+              </Button>
+            </div>
+          </div>
+          <Button onClick={handleOpenAddPaletteDialog}>Add Used Palette</Button>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="all" onValueChange={setFilter}>
+            <TabsList className="grid grid-cols-3 mb-4">
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="used">Used</TabsTrigger>
+              <TabsTrigger value="unused">Unused</TabsTrigger>
+            </TabsList>
+          </Tabs>
 
-                  <div className="flex flex-1 space-x-2">
-                    {palette.colors.map((color, colorIndex) => (
-                      <div
-                        key={colorIndex}
-                        className="flex flex-col items-center group relative"
-                      >
-                        <div
-                          className="rounded-md border border-gray-200 dark:border-gray-700 transition-transform duration-300 ease-in-out hover:-translate-y-1"
-                          style={{
-                            ...getColorSize(),
-                            backgroundColor: color,
-                          }}
-                        />
-                        <span className="text-xs font-mono mt-1 absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                          {color}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </label>
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
+          {filteredPalettes.length > 0 ? (
+            <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+              {filteredPalettes.map((palette) => (
+                <PaletteItem key={palette.id} palette={palette} />
+              ))}
+            </ul>
+          ) : (
+            <div className="text-center py-12 border rounded-lg bg-muted/20">
+              <p className="text-muted-foreground">
+                {totalCombinations === 0
+                  ? "Adjust input colors and palette size to generate palettes."
+                  : "No palettes match your filter on the current page."}
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <AddUsedPaletteDialog />
+
+      <div className="md:hidden block">
+        <MobilePaletteControls
+          onShuffle={handleShufflePalettes}
+        />
+      </div>
+    </>
   );
 };

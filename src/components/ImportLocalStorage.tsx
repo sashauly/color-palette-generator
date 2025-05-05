@@ -2,23 +2,23 @@ import React, { useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Import } from "lucide-react";
-import type { LocalStorageData } from "@/types";
 import JSZip from "jszip";
+import type { AppState } from "@/types";
+import { useAppDispatch } from "@/store/store";
+import { importState } from "@/store/paletteSlice";
 
 interface ImportLocalStorageProps {
   onImportSuccess?: () => void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onImportError?: (error: any) => void;
-  isImporting: boolean;
-  setIsImporting: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const ImportLocalStorage: React.FC<ImportLocalStorageProps> = ({
   onImportSuccess,
   onImportError,
-  isImporting,
-  setIsImporting,
 }) => {
+  const dispatch = useAppDispatch();
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = async (
@@ -30,8 +30,6 @@ const ImportLocalStorage: React.FC<ImportLocalStorageProps> = ({
       return;
     }
 
-    setIsImporting(true);
-
     try {
       const zip = new JSZip();
       const content = await zip.loadAsync(file);
@@ -42,11 +40,11 @@ const ImportLocalStorage: React.FC<ImportLocalStorageProps> = ({
       }
 
       const jsonContent = await jsonFile.async("string");
-      const importedData: LocalStorageData = JSON.parse(jsonContent);
+      const importedData: AppState = JSON.parse(jsonContent);
 
       for (const key in importedData) {
         if (Object.prototype.hasOwnProperty.call(importedData, key)) {
-          const value = importedData[key as keyof LocalStorageData];
+          const value = importedData[key as keyof AppState];
           try {
             localStorage.setItem(
               key,
@@ -58,12 +56,12 @@ const ImportLocalStorage: React.FC<ImportLocalStorageProps> = ({
         }
       }
 
+      dispatch(importState(importedData.palette));
+
       onImportSuccess?.();
     } catch (error) {
       console.error("Error importing data:", error);
       onImportError?.(error);
-    } finally {
-      setIsImporting(false);
     }
   };
 
@@ -78,18 +76,15 @@ const ImportLocalStorage: React.FC<ImportLocalStorageProps> = ({
         accept=".zip"
         ref={fileInputRef}
         onChange={handleFileChange}
-        style={{ display: "none" }}
+        className="hidden"
       />
       <Button
         type="submit"
         variant="outline"
         onClick={handleButtonClick}
-        disabled={isImporting}
-        className={`w-full sm:w-auto ${
-          isImporting ? "opacity-75 cursor-not-allowed" : ""
-        }`}
+        className={`flex-1`}
       >
-        <Import className={isImporting ? "animate-pulse" : ""} />
+        <Import />
         Import from a file
       </Button>
     </>

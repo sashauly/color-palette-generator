@@ -8,7 +8,7 @@ import { ColorStatistics } from "@/components/ColorStatistics";
 import ImportExport from "@/components/ImportExport";
 import { useAppDispatch, useAppSelector } from "@/store/store";
 import {
-  generatePalettesForPage,
+  // generatePalettesForPage,
   calculateAndUpdateStatistics,
 } from "@/store/paletteSlice";
 import { useEffect } from "react";

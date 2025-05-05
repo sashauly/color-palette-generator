@@ -68,7 +68,7 @@ export const paletteSlice = createSlice({
     updateStatistics: (state, action: PayloadAction<ColorStatisticsType>) => {
       state.statistics = action.payload;
     },
-    importState: (state, action: PayloadAction<PaletteState>) => {
+    importState: (_, action: PayloadAction<PaletteState>) => {
       const newState = action.payload;
 
       newState.totalCombinations = calculateTotalPossiblePermutations(

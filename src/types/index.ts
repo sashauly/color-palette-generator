@@ -1,6 +1,34 @@
+export interface Color {
+  id: string;
+  value: string;
+  label?: string;
+}
+
 export interface Palette {
-  colors: string[];
+  id: string;
+  colors: Color[];
   used: boolean;
+  createdAt: number;
+}
+
+export interface PaletteState {
+  inputColors: Color[];
+  paletteSize: number;
+  generatedPalettes: Palette[];
+  statistics: ColorStatisticsType;
+  totalCombinations: number | bigint;
+}
+
+export interface UiState {
+  colorInputsOpen: boolean;
+  paletteSizeSelectorOpen: boolean;
+  colorStatisticsOpen: boolean;
+  addUsedPaletteDialogOpen: boolean;
+}
+
+export interface AppState {
+  palette: PaletteState;
+  ui: UiState;
 }
 
 export type ColorStatisticsType = {
@@ -8,16 +36,3 @@ export type ColorStatisticsType = {
     [color: string]: number;
   };
 };
-
-export interface LocalStorageData {
-  colorInputsOpen: boolean;
-  colorStatisticsOpen: boolean;
-  inputColors: string[];
-  paletteSize: number;
-  numSamples: number;
-  palettes: Palette[];
-  settingsOpen: boolean;
-  usedPalettes: string[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: any;
-}

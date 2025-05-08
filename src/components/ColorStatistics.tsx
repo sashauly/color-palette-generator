@@ -14,16 +14,6 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useAppDispatch, useAppSelector } from "@/store/store";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-} from "recharts";
-
 import { toggleColorStatisticsOpen } from "@/store/uiSlice";
 
 export const ColorStatistics: React.FC = () => {
@@ -34,22 +24,7 @@ export const ColorStatistics: React.FC = () => {
     (state) => state.palette
   );
 
-  const positions = Object.keys(statistics)
-    .map(Number)
-    .sort((a, b) => a - b);
-
   const hasUsedPalettes = generatedPalettes.some((palette) => palette.used);
-
-  const getColorDataForChart = (position: number) => {
-    const positionStats = statistics[position] || {};
-
-    return Object.entries(positionStats)
-      .map(([colorValue, count]) => ({
-        colorValue,
-        count,
-      }))
-      .sort((a, b) => b.count - a.count);
-  };
 
   return (
     <Card>
@@ -117,52 +92,6 @@ export const ColorStatistics: React.FC = () => {
                     )}
                   </CardContent>
                 </Card>
-
-                {positions.map((position) => {
-                  const colorDataForChart = getColorDataForChart(position);
-                  const chartData = colorDataForChart.filter(
-                    (entry) => entry.count > 0
-                  );
-
-                  if (chartData.length === 0) return null;
-
-                  return (
-                    <Card key={`chart-${position}`}>
-                      <CardHeader>
-                        <CardTitle>
-                          Position {position} Color Usage Chart
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <ResponsiveContainer width="100%" height={200}>
-                          <BarChart data={chartData}>
-                            <XAxis
-                              dataKey="colorValue"
-                              axisLine={false}
-                              tickLine={false}
-                            />
-                            <YAxis />
-                            <Tooltip
-                              formatter={(value: number) => [
-                                `${value} uses`,
-                                "Usage",
-                              ]}
-                              labelFormatter={(color) => `Color: ${color}`}
-                            />
-                            <Bar dataKey="count">
-                              {chartData.map((entry, index) => (
-                                <Cell
-                                  key={`cell-${index}`}
-                                  fill={entry.colorValue}
-                                />
-                              ))}
-                            </Bar>
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
               </div>
             )}
           </CardContent>

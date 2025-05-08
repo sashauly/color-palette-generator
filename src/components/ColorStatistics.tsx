@@ -143,7 +143,7 @@ export const ColorStatistics: React.FC = () => {
                                     className="h-6 w-6 rounded-full border"
                                     style={{ backgroundColor: color.value }}
                                   />
-                                  <span>{color.label || color.value}</span>
+                                  <span>{color.value}</span>
                                 </div>
                               </TableCell>
                               {positions.map((position) => (

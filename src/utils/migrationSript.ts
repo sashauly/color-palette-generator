@@ -1,6 +1,12 @@
 import fs from "node:fs";
 import { generateId } from "./helpers.ts";
-import { AppState, PaletteState, UiState, Color, Palette } from "../types/index.ts";
+import {
+  AppState,
+  PaletteState,
+  UiState,
+  Color,
+  Palette,
+} from "../types/index.ts";
 
 // --- Old Interfaces ---
 export interface OldPalette {
@@ -23,6 +29,7 @@ export interface OldLocalStorageData {
   palettes: OldPalette[];
   settingsOpen: boolean;
   usedPalettes: string[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
 
@@ -46,6 +53,7 @@ const migrateData = (oldData: OldLocalStorageData): AppState => {
     generatedPalettes: [],
     statistics: {},
     totalCombinations: oldData.numSamples || 120,
+    addManualPaletteStatus: "idle",
   };
 
   // Defaulting these based on the new types.
@@ -56,6 +64,9 @@ const migrateData = (oldData: OldLocalStorageData): AppState => {
     paletteSizeSelectorOpen: oldData.settingsOpen || false,
     colorStatisticsOpen: oldData.colorStatisticsOpen || false,
     addUsedPaletteDialogOpen: false,
+    paletteSizeConfirmDialogOpen: false,
+    importExportOpen: false,
+    paletteListFilter: "all",
   };
 
   const colorMap = new Map<string, Color>();
@@ -64,7 +75,6 @@ const migrateData = (oldData: OldLocalStorageData): AppState => {
       const newColor: Color = {
         id: generateId(),
         value: colorHex.toUpperCase(),
-        label: getColorLabel(colorHex),
       };
       newPalette.inputColors.push(newColor);
       colorMap.set(colorHex.toUpperCase(), newColor);

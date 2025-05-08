@@ -1,7 +1,5 @@
 import { ColorInput } from "@/components/ColorInput";
-import { useMediaQuery } from "@uidotdev/usehooks";
 import { Palette } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PaletteSizeSelector from "@/components/PaletteSizeSelector";
 import { PaletteList } from "@/components/PaletteList";
 import { ColorStatistics } from "@/components/ColorStatistics";
@@ -14,7 +12,6 @@ import {
 import { useEffect } from "react";
 
 const Index = () => {
-  const isMobile = useMediaQuery("(max-width: 768px)");
   const { inputColors, paletteSize, generatedPalettes } = useAppSelector(
     (state) => state.palette
   );
@@ -41,7 +38,9 @@ const Index = () => {
           </p>
         </header>
 
-        <main>{isMobile ? <MobileLayout /> : <DesktopLayout />}</main>
+        <main>
+          <DesktopLayout />
+        </main>
 
         <footer className="py-2 text-center text-sm text-gray-500 dark:text-gray-400">
           <p>
@@ -65,39 +64,11 @@ const DesktopLayout = () => {
         <ImportExport />
       </div>
       <div className="lg:col-span-8 space-y-4">
-        <PaletteList />
-
         <ColorStatistics />
+
+        <PaletteList />
       </div>
     </div>
-  );
-};
-
-const MobileLayout = () => {
-  return (
-    <Tabs defaultValue="palettes">
-      <TabsList className="flex flex-wrap w-full">
-        <TabsTrigger value="settings">Settings</TabsTrigger>
-        <TabsTrigger value="palettes">Palettes</TabsTrigger>
-        <TabsTrigger value="stats">Stats</TabsTrigger>
-      </TabsList>
-
-      <TabsContent value="settings" className="space-y-4">
-        <ColorInput />
-
-        <PaletteSizeSelector />
-
-        <ImportExport />
-      </TabsContent>
-
-      <TabsContent value="palettes">
-        <PaletteList />
-      </TabsContent>
-
-      <TabsContent value="stats">
-        <ColorStatistics />
-      </TabsContent>
-    </Tabs>
   );
 };
 

@@ -7,6 +7,7 @@ const initialState: UiState = {
   colorStatisticsOpen: true,
   addUsedPaletteDialogOpen: false,
   paletteSizeConfirmDialogOpen: false,
+  importExportOpen: false,
 };
 
 const uiSlice = createSlice({
@@ -46,6 +47,12 @@ const uiSlice = createSlice({
     togglePaletteSizeConfirmDialogOpen: (state) => {
       state.paletteSizeConfirmDialogOpen = !state.paletteSizeConfirmDialogOpen;
     },
+    setImportExportOpen: (state, action: PayloadAction<boolean>) => {
+      state.importExportOpen = action.payload;
+    },
+    toggleImportExportOpen: (state) => {
+      state.importExportOpen = !state.importExportOpen;
+    },
     loadUiState: (state, action: PayloadAction<UiState>) => {
       Object.assign(state, action.payload);
     },
@@ -63,6 +70,8 @@ export const {
   setAddUsedPaletteDialogOpen,
   togglePaletteSizeConfirmDialogOpen,
   setPaletteSizeConfirmDialogOpen,
+  setImportExportOpen,
+  toggleImportExportOpen,
   loadUiState,
 } = uiSlice.actions;
 

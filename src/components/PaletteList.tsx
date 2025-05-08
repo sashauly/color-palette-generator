@@ -136,19 +136,19 @@ export const PaletteList: React.FC = () => {
               <TabsTrigger value="all">
                 All <span className="sr-only">palettes</span>
                 <span className="rounded-full bg-muted text-muted-foreground border border-border px-2 py-1 text-xs font-medium">
-                  {filteredPalettes.length}
+                  {generatedPalettes.length}
                 </span>
               </TabsTrigger>
               <TabsTrigger
                 value="used"
-                disabled={!filteredPalettes.some((p) => p.used)}
+                disabled={!generatedPalettes.some((p) => p.used)}
               >
                 Used <span className="sr-only">palettes</span>
                 <span className="rounded-full bg-muted text-muted-foreground border border-border px-2 py-1 text-xs font-medium">
-                  {filteredPalettes.filter((p) => p.used).length}
+                  {generatedPalettes.filter((p) => p.used).length}
                 </span>
               </TabsTrigger>
-              <TabsTrigger value="unused" disabled={!filteredPalettes.length}>
+              <TabsTrigger value="unused" disabled={!generatedPalettes.length}>
                 Unused <span className="sr-only">palettes</span>
               </TabsTrigger>
             </TabsList>

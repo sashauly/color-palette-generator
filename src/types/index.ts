@@ -16,6 +16,7 @@ export interface PaletteState {
   generatedPalettes: Palette[];
   statistics: ColorStatisticsType;
   totalCombinations: number | bigint;
+  addManualPaletteStatus: AddManualPaletteStatus;
 }
 
 export interface UiState {
@@ -35,3 +36,10 @@ export type ColorStatisticsType = {
     [color: string]: number;
   };
 };
+
+export type AddManualPaletteStatus =
+  | "idle"
+  | "added"
+  | "exist"
+  | "already_used"
+  | "invalid";

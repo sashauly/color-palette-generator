@@ -23,21 +23,14 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+
 import { toggleColorStatisticsOpen } from "@/store/uiSlice";
 
 export const ColorStatistics: React.FC = () => {
   const { colorStatisticsOpen: isOpen } = useAppSelector((state) => state.ui);
   const dispatch = useAppDispatch();
 
-  const { statistics, inputColors, generatedPalettes } = useAppSelector(
+  const { statistics, generatedPalettes } = useAppSelector(
     (state) => state.palette
   );
 
@@ -47,7 +40,7 @@ export const ColorStatistics: React.FC = () => {
 
   const hasUsedPalettes = generatedPalettes.some((palette) => palette.used);
 
-  const getColorData = (position: number) => {
+  const getColorDataForChart = (position: number) => {
     const positionStats = statistics[position] || {};
 
     return Object.entries(positionStats)
@@ -59,7 +52,7 @@ export const ColorStatistics: React.FC = () => {
   };
 
   return (
-    <Card className="py-4">
+    <Card>
       <Collapsible
         open={isOpen}
         onOpenChange={() => dispatch(toggleColorStatisticsOpen())}
@@ -75,38 +68,13 @@ export const ColorStatistics: React.FC = () => {
             </CollapsibleTrigger>
           </CardTitle>
           <CardDescription>
-            <p>
-              The number of times each color appears in the generated palettes
-              (only used palettes).
-            </p>
+            The number of times each color appears in the generated palettes
+            (only used palettes), grouped by position.
           </CardDescription>
         </CardHeader>
+
         <CollapsibleContent>
           <CardContent>
-            {/* TODO remove old statistics */}
-            {/* {Object.keys(statistics).length === 0 ? (
-              <div>No statistics to display yet.</div>
-            ) : (
-              Object.entries(statistics).map(([position, colorCounts]) => (
-                <div key={position}>
-                  <h4 className="font-medium">Position {position}:</h4>
-                  <ul>
-                    {Object.entries(colorCounts).map(([color, count]) => (
-                      <li key={color} className="flex items-center space-x-2">
-                        <div
-                          className="w-4 h-4 rounded-md border border-gray-200 dark:border-gray-700"
-                          style={{
-                            backgroundColor: color,
-                          }}
-                        />
-                        <span className="text-sm font-medium">{count}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))
-            )} */}
-
             {!hasUsedPalettes ? (
               <div className="text-center py-10 border rounded-lg bg-muted/20">
                 <p className="text-muted-foreground">
@@ -114,65 +82,60 @@ export const ColorStatistics: React.FC = () => {
                 </p>
               </div>
             ) : (
-              <div className="space-y-6">
+              <div className="py-4 space-y-4">
                 <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">
-                      Position-based Color Usage
-                    </CardTitle>
+                  <CardHeader>
+                    <CardTitle>Position-based Color Usage</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Color</TableHead>
-                            {positions.map((position) => (
-                              <TableHead key={position}>
-                                Position {position}
-                              </TableHead>
-                            ))}
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {inputColors.map((color) => (
-                            <TableRow key={color.id}>
-                              <TableCell>
-                                <div className="flex items-center gap-2">
+                  <CardContent className="flex flex-wrap justify-around gap-4">
+                    {Object.entries(statistics).map(
+                      ([position, colorCounts]) => (
+                        <div key={position}>
+                          <h4 className="font-medium">Position {position}:</h4>
+                          <ul>
+                            {Object.entries(colorCounts).map(
+                              ([color, count]) => (
+                                <li
+                                  key={color}
+                                  className="flex items-center space-x-2"
+                                >
                                   <div
-                                    className="h-6 w-6 rounded-full border"
-                                    style={{ backgroundColor: color.value }}
+                                    className="w-4 h-4 rounded-md border border-gray-200 dark:border-gray-700"
+                                    style={{
+                                      backgroundColor: color,
+                                    }}
                                   />
-                                  <span>{color.value}</span>
-                                </div>
-                              </TableCell>
-                              {positions.map((position) => (
-                                <TableCell key={`${color.value}-${position}`}>
-                                  {statistics[position]?.[color.value] || 0}
-                                </TableCell>
-                              ))}
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
+                                  <span className="text-sm font-medium">
+                                    {count}
+                                  </span>
+                                </li>
+                              )
+                            )}
+                          </ul>
+                        </div>
+                      )
+                    )}
                   </CardContent>
                 </Card>
 
                 {positions.map((position) => {
-                  const colorData = getColorData(position);
-                  if (colorData.length === 0) return null;
+                  const colorDataForChart = getColorDataForChart(position);
+                  const chartData = colorDataForChart.filter(
+                    (entry) => entry.count > 0
+                  );
+
+                  if (chartData.length === 0) return null;
 
                   return (
-                    <Card key={position}>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-lg">
-                          Position {position} Color Usage
+                    <Card key={`chart-${position}`}>
+                      <CardHeader>
+                        <CardTitle>
+                          Position {position} Color Usage Chart
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
                         <ResponsiveContainer width="100%" height={200}>
-                          <BarChart data={colorData}>
+                          <BarChart data={chartData}>
                             <XAxis
                               dataKey="colorValue"
                               axisLine={false}
@@ -187,7 +150,7 @@ export const ColorStatistics: React.FC = () => {
                               labelFormatter={(color) => `Color: ${color}`}
                             />
                             <Bar dataKey="count">
-                              {colorData.map((entry, index) => (
+                              {chartData.map((entry, index) => (
                                 <Cell
                                   key={`cell-${index}`}
                                   fill={entry.colorValue}

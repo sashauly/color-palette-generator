@@ -5,16 +5,17 @@ import {
   calculateColorStatistics,
   calculateTotalPossiblePermutations,
   generatePalettes,
+  arePalettesEqual,
 } from "@/utils/helpers";
 import { AppDispatch, RootState } from "@/store/store";
 
 const defaultInputColors: Color[] = [
-  { id: generateId(), value: "#FFFFFF", label: "White" },
-  { id: generateId(), value: "#000000", label: "Black" },
-  { id: generateId(), value: "#a82b3d", label: "Red" },
-  { id: generateId(), value: "#465e7a", label: "Blue" },
-  { id: generateId(), value: "#92a14f", label: "Green" },
-  { id: generateId(), value: "#fac403", label: "Yellow" },
+  { id: generateId(), value: "#FFFFFF" },
+  { id: generateId(), value: "#000000" },
+  { id: generateId(), value: "#a82b3d" },
+  { id: generateId(), value: "#465e7a" },
+  { id: generateId(), value: "#92a14f" },
+  { id: generateId(), value: "#fac403" },
 ];
 
 const defaultPaletteSize = 3;
@@ -25,6 +26,7 @@ const initialState: PaletteState = {
   generatedPalettes: [],
   statistics: {},
   totalCombinations: 0,
+  addManualPaletteStatus: "idle",
 };
 
 export const paletteSlice = createSlice({
@@ -32,13 +34,45 @@ export const paletteSlice = createSlice({
   initialState,
   reducers: {
     setInputColors: (state, action: PayloadAction<Color[]>) => {
-      state.inputColors = action.payload;
+      const newInputColors = action.payload;
+
+      const usedPalettes = state.generatedPalettes.filter(
+        (palette) => palette.used
+      );
+
+      const validatedUsedPalettes = usedPalettes
+        .map((palette) => {
+          const updatedColors: Color[] = [];
+          let isValid = true;
+
+          for (const paletteColor of palette.colors) {
+            const correspondingInputColor = newInputColors.find(
+              (inputColor) => inputColor.id === paletteColor.id
+            );
+
+            if (correspondingInputColor) {
+              updatedColors.push(correspondingInputColor);
+            } else {
+              isValid = false;
+              break;
+            }
+          }
+
+          if (isValid && updatedColors.length === state.paletteSize) {
+            return { ...palette, colors: updatedColors };
+          } else {
+            return null;
+          }
+        })
+        .filter((palette): palette is Palette => palette !== null);
+
+      state.generatedPalettes = validatedUsedPalettes;
+      state.inputColors = newInputColors;
 
       state.totalCombinations = calculateTotalPossiblePermutations(
         state.inputColors.length,
         state.paletteSize
       );
-      state.generatedPalettes = [];
     },
     setPaletteSize: (state, action: PayloadAction<number>) => {
       state.paletteSize = action.payload;
@@ -49,7 +83,7 @@ export const paletteSlice = createSlice({
       );
       state.generatedPalettes = [];
     },
-    setPalettes: (state, action: PayloadAction<Palette[]>) => {
+    setGeneratedPalettes: (state, action: PayloadAction<Palette[]>) => {
       state.generatedPalettes = action.payload;
     },
     toggleUsedPalette: (state, action: PayloadAction<string>) => {
@@ -71,6 +105,34 @@ export const paletteSlice = createSlice({
     importState: (_, action: PayloadAction<PaletteState>) => {
       const newState = action.payload;
 
+      const validatedUsedPalettes = newState.generatedPalettes
+        .filter((palette) => palette.used)
+        .map((palette) => {
+          const updatedColors: Color[] = [];
+          let isValid = true;
+          for (const paletteColor of palette.colors) {
+            const correspondingInputColor = newState.inputColors.find(
+              (inputColor) => inputColor.id === paletteColor.id
+            );
+
+            if (correspondingInputColor) {
+              updatedColors.push(correspondingInputColor);
+            } else {
+              isValid = false;
+              break;
+            }
+          }
+
+          if (isValid && updatedColors.length === newState.paletteSize) {
+            return { ...palette, colors: updatedColors };
+          } else {
+            return null;
+          }
+        })
+        .filter((palette): palette is Palette => palette !== null);
+
+      newState.generatedPalettes = validatedUsedPalettes;
+
       newState.totalCombinations = calculateTotalPossiblePermutations(
         newState.inputColors.length,
         newState.paletteSize
@@ -81,8 +143,32 @@ export const paletteSlice = createSlice({
     addManualPalette: (state, action: PayloadAction<Palette>) => {
       const newPalette = { ...action.payload, used: true };
 
+      const validColors: Color[] = [];
+      let isValid = true;
+      for (const paletteColor of newPalette.colors) {
+        const inputColor = state.inputColors.find(
+          (input) => input.id === paletteColor.id
+        );
+        if (inputColor) {
+          validColors.push(inputColor);
+        } else {
+          isValid = false;
+          break;
+        }
+      }
+
+      if (!isValid || validColors.length !== state.paletteSize) {
+        console.warn(
+          "Manually added palette does not match current size or input colors."
+        );
+        state.addManualPaletteStatus = "invalid";
+        return; 
+      }
+
+      const paletteToAdd = { ...newPalette, colors: validColors };
+
       const newPaletteColorsKey = JSON.stringify(
-        newPalette.colors.map((color) => color.value)
+        paletteToAdd.colors.map((color) => color.value)
       );
 
       const existingIndex = state.generatedPalettes.findIndex(
@@ -92,11 +178,29 @@ export const paletteSlice = createSlice({
       );
 
       if (existingIndex === -1) {
-        state.generatedPalettes.unshift(newPalette);
+        state.generatedPalettes.unshift(paletteToAdd);
+        state.addManualPaletteStatus = "added";
       } else {
-        state.generatedPalettes.splice(existingIndex, 1);
-        state.generatedPalettes.unshift(newPalette);
+        if (!state.generatedPalettes[existingIndex].used) {
+          state.generatedPalettes[existingIndex].used = true;
+          const [movedPalette] = state.generatedPalettes.splice(
+            existingIndex,
+            1
+          );
+          state.generatedPalettes.unshift(movedPalette);
+          state.addManualPaletteStatus = "exist";
+        } else {
+          const [movedPalette] = state.generatedPalettes.splice(
+            existingIndex,
+            1
+          );
+          state.generatedPalettes.unshift(movedPalette);
+          state.addManualPaletteStatus = "already_used";
+        }
       }
+    },
+    resetAddManualPaletteStatus: (state) => {
+      state.addManualPaletteStatus = "idle";
     },
   },
 });
@@ -104,20 +208,35 @@ export const paletteSlice = createSlice({
 const generatePalettesForPage =
   () => (dispatch: AppDispatch, getState: () => RootState) => {
     const state = getState().palette;
-    const { inputColors, paletteSize, totalCombinations } = state;
+    const {
+      inputColors,
+      paletteSize,
+      totalCombinations,
+      generatedPalettes: usedAndGenerated,
+    } = state;
 
     if (
       inputColors.length < paletteSize ||
       paletteSize <= 0 ||
       totalCombinations === 0
     ) {
-      dispatch(paletteSlice.actions.setPalettes([]));
+      const usedPalettes = usedAndGenerated.filter((p) => p.used);
+      dispatch(paletteSlice.actions.setGeneratedPalettes(usedPalettes));
       return;
     }
 
-    const palettesForPage = generatePalettes(inputColors, paletteSize);
+    const usedPalettes = usedAndGenerated.filter((p) => p.used);
 
-    dispatch(paletteSlice.actions.setPalettes(palettesForPage));
+    const newlyGenerated = generatePalettes(inputColors, paletteSize).filter(
+      (newPalette) =>
+        !usedPalettes.some((usedPalette) =>
+          arePalettesEqual(usedPalette, newPalette)
+        )
+    );
+
+    const allPalettes = [...usedPalettes, ...newlyGenerated];
+
+    dispatch(paletteSlice.actions.setGeneratedPalettes(allPalettes));
   };
 
 const calculateAndUpdateStatistics =
@@ -134,13 +253,14 @@ const calculateAndUpdateStatistics =
 export const {
   setInputColors,
   setPaletteSize,
-  setPalettes,
+  setGeneratedPalettes,
   toggleUsedPalette,
   clearAllPalettes,
   clearUsedPalettes,
   updateStatistics,
   importState,
   addManualPalette,
+  resetAddManualPaletteStatus,
 } = paletteSlice.actions;
 
 export { calculateAndUpdateStatistics, generatePalettesForPage };

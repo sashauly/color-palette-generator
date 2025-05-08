@@ -8,20 +8,21 @@ import { ColorStatistics } from "@/components/ColorStatistics";
 import ImportExport from "@/components/ImportExport";
 import { useAppDispatch, useAppSelector } from "@/store/store";
 import {
-  // generatePalettesForPage,
+  generatePalettesForPage,
   calculateAndUpdateStatistics,
 } from "@/store/paletteSlice";
 import { useEffect } from "react";
 
 const Index = () => {
   const isMobile = useMediaQuery("(max-width: 768px)");
-  const { inputColors, paletteSize, generatedPalettes } =
-    useAppSelector((state) => state.palette);
+  const { inputColors, paletteSize, generatedPalettes } = useAppSelector(
+    (state) => state.palette
+  );
   const dispatch = useAppDispatch();
 
-  // useEffect(() => {
-  //   dispatch(generatePalettesForPage());
-  // }, [inputColors, paletteSize, dispatch]);
+  useEffect(() => {
+    dispatch(generatePalettesForPage());
+  }, [inputColors, paletteSize, dispatch]);
 
   useEffect(() => {
     dispatch(calculateAndUpdateStatistics());
@@ -30,7 +31,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="container mx-auto px-4 py-6">
-        <header className="mb-8 text-center">
+        <header className="mb-4 text-center">
           <h1 className="text-3xl md:text-4xl font-bold mb-2">
             <Palette className="inline-block w-10 h-10 mr-2" />
             Color Palette Generator
@@ -74,31 +75,29 @@ const DesktopLayout = () => {
 
 const MobileLayout = () => {
   return (
-    <div className="space-y-6">
-      <Tabs defaultValue="palettes">
-        <TabsList className="grid grid-cols-3 mb-4">
-          <TabsTrigger value="settings">Settings</TabsTrigger>
-          <TabsTrigger value="palettes">Palettes</TabsTrigger>
-          <TabsTrigger value="stats">Stats</TabsTrigger>
-        </TabsList>
+    <Tabs defaultValue="palettes">
+      <TabsList className="flex flex-wrap w-full">
+        <TabsTrigger value="settings">Settings</TabsTrigger>
+        <TabsTrigger value="palettes">Palettes</TabsTrigger>
+        <TabsTrigger value="stats">Stats</TabsTrigger>
+      </TabsList>
 
-        <TabsContent value="settings" className="space-y-4">
-          <ColorInput />
+      <TabsContent value="settings" className="space-y-4">
+        <ColorInput />
 
-          <PaletteSizeSelector />
+        <PaletteSizeSelector />
 
-          <ImportExport />
-        </TabsContent>
+        <ImportExport />
+      </TabsContent>
 
-        <TabsContent value="palettes">
-          <PaletteList />
-        </TabsContent>
+      <TabsContent value="palettes">
+        <PaletteList />
+      </TabsContent>
 
-        <TabsContent value="stats">
-          <ColorStatistics />
-        </TabsContent>
-      </Tabs>
-    </div>
+      <TabsContent value="stats">
+        <ColorStatistics />
+      </TabsContent>
+    </Tabs>
   );
 };
 

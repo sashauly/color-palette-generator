@@ -6,14 +6,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Shuffle, Sparkles, Trash } from "lucide-react";
+import { Plus, Shuffle, Sparkles, Trash, Trash2 } from "lucide-react";
 import { Button } from "./ui/button";
 import { useAppDispatch, useAppSelector } from "@/store/store";
 import {
   clearAllPalettes,
   clearUsedPalettes,
   generatePalettesForPage,
-  setPalettes,
+  setGeneratedPalettes,
 } from "@/store/paletteSlice";
 import PaletteItem from "./PaletteItem";
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
@@ -34,12 +34,12 @@ export const PaletteList: React.FC = () => {
     if (generatedPalettes.length === 0) return;
 
     const shuffled = shuffleColors(generatedPalettes);
-    dispatch(setPalettes(shuffled));
+    dispatch(setGeneratedPalettes(shuffled));
   };
 
   const handleClearAllPalettes = () => {
     dispatch(clearAllPalettes());
-    dispatch(setPalettes([]));
+    dispatch(setGeneratedPalettes([]));
   };
 
   const handleClearUsedPalettes = () => {
@@ -58,27 +58,23 @@ export const PaletteList: React.FC = () => {
 
   return (
     <>
-      <Card className="py-4">
+      <Card>
         <CardHeader>
           <CardTitle className="flex flex-wrap justify-between items-center gap-2">
-            <div className="flex items-center gap-2">Color Palettes</div>
+            <h4 className="font-semibold">Color Palettes</h4>
             <div className="flex flex-wrap gap-2">
-              {/* The "Generate" button now implicitly triggers generation
-                  by changing inputColors or paletteSize */}
-              {/* You might keep a "Regenerate Current Page" button if needed */}
               <Button
                 onClick={() => dispatch(generatePalettesForPage())}
                 variant="default"
-                className="flex-shrink-0"
               >
                 <Sparkles className="mr-2 h-4 w-4" />
                 Generate
               </Button>
+
               <Button
                 onClick={handleShufflePalettes}
                 variant="outline"
                 disabled={generatedPalettes.length === 0}
-                className="flex-shrink-0"
               >
                 <Shuffle className="mr-2 h-4 w-4" />
                 Shuffle
@@ -86,57 +82,71 @@ export const PaletteList: React.FC = () => {
             </div>
           </CardTitle>
           <CardDescription>
-            <span>
+            <p>
               Total possible unique palettes:{" "}
-              {typeof totalCombinations === "bigint"
-                ? formatBigInt(totalCombinations)
-                : totalCombinations}
-            </span>
-
-            {totalCombinations === 0 && (
-              <span>
-                Adjust input colors and palette size to generate palettes.
+              <span className="font-semibold">
+                {typeof totalCombinations === "bigint"
+                  ? formatBigInt(totalCombinations)
+                  : totalCombinations}
               </span>
-            )}
+            </p>
           </CardDescription>
-          <div className="flex flex-wrap gap-2 justify-between items-center">
-            <div className="flex flex-wrap gap-2">
-              <Button
-                onClick={handleClearAllPalettes}
-                variant="outline"
-                className="text-destructive hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
-                disabled={
-                  generatedPalettes.length === 0 && totalCombinations === 0
-                }
-              >
-                <Trash className="mr-2 h-4 w-4" />
-                Clear All
-              </Button>
-              <Button
-                onClick={handleClearUsedPalettes}
-                variant="outline"
-                className="flex-shrink-0"
-                disabled={!generatedPalettes.some((p) => p.used)}
-              >
-                Clear Used
-              </Button>
-            </div>
+
+          <div className="flex flex-wrap gap-2 items-center">
+            <Button onClick={handleOpenAddPaletteDialog}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Used Palette
+            </Button>
+
+            <Button
+              onClick={handleClearUsedPalettes}
+              variant="outline"
+              disabled={!generatedPalettes.some((p) => p.used)}
+            >
+              <Trash className="mr-2 h-4 w-4" />
+              Clear Used
+            </Button>
+
+            <Button
+              onClick={handleClearAllPalettes}
+              variant="outline"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              disabled={generatedPalettes.length === 0}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Clear All
+            </Button>
           </div>
-          <Button onClick={handleOpenAddPaletteDialog}>Add Used Palette</Button>
         </CardHeader>
+
         <CardContent>
           <Tabs defaultValue="all" onValueChange={setFilter}>
-            <TabsList className="grid grid-cols-3 mb-4">
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="used">Used</TabsTrigger>
-              <TabsTrigger value="unused">Unused</TabsTrigger>
+            <TabsList className="flex flex-srap w-full mb-2">
+              <TabsTrigger value="all">
+                All <span className="sr-only">palettes</span>
+                <span className="rounded-full bg-muted text-muted-foreground border border-border px-2 py-1 text-xs font-medium">
+                  {filteredPalettes.length}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="used"
+                disabled={!filteredPalettes.some((p) => p.used)}
+              >
+                Used <span className="sr-only">palettes</span>
+                <span className="rounded-full bg-muted text-muted-foreground border border-border px-2 py-1 text-xs font-medium">
+                  {filteredPalettes.filter((p) => p.used).length}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger value="unused" disabled={!filteredPalettes.length}>
+                Unused <span className="sr-only">palettes</span>
+              </TabsTrigger>
             </TabsList>
           </Tabs>
 
           {filteredPalettes.length > 0 ? (
             <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-              {filteredPalettes.map((palette) => (
-                <PaletteItem key={palette.id} palette={palette} />
+              {filteredPalettes.map((palette, index) => (
+                <PaletteItem key={palette.id} index={index} palette={palette} />
               ))}
             </ul>
           ) : (
@@ -154,9 +164,7 @@ export const PaletteList: React.FC = () => {
       <AddUsedPaletteDialog />
 
       <div className="md:hidden block">
-        <MobilePaletteControls
-          onShuffle={handleShufflePalettes}
-        />
+        <MobilePaletteControls onShuffle={handleShufflePalettes} />
       </div>
     </>
   );

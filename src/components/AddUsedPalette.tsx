@@ -1,8 +1,10 @@
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -21,7 +23,10 @@ import { useCallback, useEffect, useState } from "react";
 import type { Palette, Color } from "@/types";
 import { generateId, getContrastColor } from "@/utils/helpers";
 import { useAppDispatch, useAppSelector } from "@/store/store";
-import { addManualPalette } from "@/store/paletteSlice";
+import {
+  addManualPalette,
+  resetAddManualPaletteStatus,
+} from "@/store/paletteSlice";
 import { Plus } from "lucide-react";
 import {
   setAddUsedPaletteDialogOpen,
@@ -29,7 +34,9 @@ import {
 } from "@/store/uiSlice";
 
 export function AddUsedPaletteDialog() {
-  const { paletteSize } = useAppSelector((state) => state.palette);
+  const { paletteSize, inputColors, addManualPaletteStatus } = useAppSelector(
+    (state) => state.palette
+  );
   const dispatch = useAppDispatch();
   const [selectedColors, setSelectedColors] = useState<Color[]>([]);
 
@@ -45,10 +52,36 @@ export function AddUsedPaletteDialog() {
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    switch (addManualPaletteStatus) {
+      case "added":
+        toast.success("Palette added successfully!");
+        dispatch(setAddUsedPaletteDialogOpen(false));
+        dispatch(resetAddManualPaletteStatus());
+        break;
+      case "exist":
+      case "already_used":
+        toast.info(
+          addManualPaletteStatus === "exist"
+            ? "Palette marked as used."
+            : "Palette already being used."
+        );
+        dispatch(setAddUsedPaletteDialogOpen(false));
+        dispatch(resetAddManualPaletteStatus());
+        break;
+      case "invalid":
+        toast.error("Failed to add palette: Invalid colors or size.");
+        dispatch(resetAddManualPaletteStatus());
+        break;
+      default:
+        break;
+    }
+  }, [addManualPaletteStatus, dispatch]);
+
   const handleColorSelect = useCallback(
     (color: Color) => {
-      if (selectedColors.includes(color)) {
-        setSelectedColors(selectedColors.filter((c) => c !== color));
+      if (selectedColors.find((c) => c.id === color.id)) {
+        setSelectedColors(selectedColors.filter((c) => c.id !== color.id));
       } else if (selectedColors.length < paletteSize) {
         setSelectedColors([...selectedColors, color]);
       } else {
@@ -70,20 +103,15 @@ export function AddUsedPaletteDialog() {
       used: true,
       createdAt: Date.now(),
     };
+
     dispatch(addManualPalette(newPalette));
-    dispatch(setAddUsedPaletteDialogOpen(false));
   }, [selectedColors, paletteSize, dispatch]);
 
-  if (!isOpen) return null;
-
-  const handleRemoveColor = (index: number) => {
-    if (selectedColors.length === 0) {
-      toast.error("No colors to remove");
-    }
+  const handleRemoveColor = useCallback((colorToRemove: Color) => {
     setSelectedColors((prevSelectedColors) =>
-      prevSelectedColors.filter((_, i) => i !== index)
+      prevSelectedColors.filter((c) => c.id !== colorToRemove.id)
     );
-  };
+  }, []);
 
   if (!isSmallDevice) {
     return (
@@ -99,10 +127,25 @@ export function AddUsedPaletteDialog() {
             </DialogDescription>
           </DialogHeader>
           <AddUsedPaletteForm
+            inputColors={inputColors}
             selectedColors={selectedColors}
             handleColorSelect={handleColorSelect}
             handleRemoveColor={handleRemoveColor}
+            paletteSize={paletteSize}
           />
+          <DialogFooter>
+            <Button
+              variant="default"
+              onClick={handleAddPalette}
+              disabled={selectedColors.length < paletteSize}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Palette
+            </Button>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     );
@@ -121,15 +164,17 @@ export function AddUsedPaletteDialog() {
           </DrawerDescription>
         </DrawerHeader>
         <AddUsedPaletteForm
+          inputColors={inputColors}
           selectedColors={selectedColors}
           handleColorSelect={handleColorSelect}
           handleRemoveColor={handleRemoveColor}
+          paletteSize={paletteSize}
         />
         <DrawerFooter className="pt-2">
           <Button
             variant="default"
             onClick={handleAddPalette}
-            disabled={selectedColors.length === 0}
+            disabled={selectedColors.length < paletteSize}
           >
             <Plus className="mr-2 h-4 w-4" />
             Add Palette
@@ -144,17 +189,41 @@ export function AddUsedPaletteDialog() {
 }
 
 interface AddUsedPaletteFormProps {
+  inputColors: Color[];
   selectedColors: Color[];
   handleColorSelect: (color: Color) => void;
-  handleRemoveColor: (index: number) => void;
+  handleRemoveColor: (color: Color) => void;
+  paletteSize: number;
 }
 
 function AddUsedPaletteForm({
+  inputColors,
   selectedColors,
   handleColorSelect,
   handleRemoveColor,
+  paletteSize,
 }: AddUsedPaletteFormProps) {
-  const { inputColors, paletteSize } = useAppSelector((state) => state.palette);
+  const labelColors = (color: string) => {
+    const contrastBackgroundColor = getContrastColor(color);
+    const contrastTextColor = getContrastColor(contrastBackgroundColor);
+
+    return {
+      backgroundColor: contrastBackgroundColor,
+      color: contrastTextColor,
+    };
+  };
+
+  const handleRemoveColorByIndex = useCallback(
+    (index: number) => {
+      const colorToRemove = selectedColors[index];
+      if (colorToRemove) {
+        handleRemoveColor(colorToRemove);
+      } else {
+        toast.error("No color at this position to remove");
+      }
+    },
+    [selectedColors, handleRemoveColor]
+  );
 
   return (
     <>
@@ -162,9 +231,9 @@ function AddUsedPaletteForm({
         {inputColors.map((color) => (
           <Button
             key={color.id}
-            className={`color-swatch min-w-8 min-h-8 rounded-full border border-border hover:scale-110 transition-transform           
+            className={`color-swatch min-w-8 min-h-8 rounded-full border border-border hover:scale-110 transition-transform
               ${
-                selectedColors.includes(color)
+                selectedColors.find((c) => c.id === color.id)
                   ? "outline-2 outline-solid outline-border scale-105"
                   : "outline-none opacity-100"
               }`}
@@ -174,13 +243,12 @@ function AddUsedPaletteForm({
             onClick={() => handleColorSelect(color)}
             title={color.value}
           >
-            {selectedColors.includes(color) && (
+            {selectedColors.find((c) => c.id === color.id) && (
               <div
-                className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ${getContrastColor(
-                  color.value
-                )}`}
+                className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2`}
+                style={{ color: getContrastColor(color.value) }}
               >
-                {selectedColors.indexOf(color) + 1}
+                {selectedColors.findIndex((c) => c.id === color.id) + 1}
               </div>
             )}
           </Button>
@@ -196,18 +264,15 @@ function AddUsedPaletteForm({
           <div className="flex mb-3">
             {selectedColors.map((color, index) => (
               <button
-                key={index}
-                className="flex-1 relative h-12"
+                key={color.id}
+                className="flex-1 relative h-15 rounded-md border border-gray-200 dark:border-gray-700"
                 style={{ backgroundColor: color.value }}
-                onClick={() => handleRemoveColor(index)}
-                title="Click to remove"
+                onClick={() => handleRemoveColorByIndex(index)}
+                title={`Click to remove ${color.value}`}
               >
                 <span
                   className="absolute top-1 right-1 rounded-full h-4 w-4 text-xs flex items-center justify-center"
-                  style={{
-                    backgroundColor: "rgba(255,255,255,0.7)",
-                    color: "#000",
-                  }}
+                  style={labelColors(color.value)}
                 >
                   {index + 1}
                 </span>
@@ -215,7 +280,7 @@ function AddUsedPaletteForm({
             ))}
           </div>
         ) : (
-          <div className="text-center py-4 bg-muted/10 rounded-md mb-3">
+          <div className="text-center bg-muted/10 rounded-md mb-3">
             <p className="text-muted-foreground">
               Click on colors above to add them to your palette
             </p>

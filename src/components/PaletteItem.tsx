@@ -4,10 +4,11 @@ import { useAppDispatch } from "@/store/store";
 import { toggleUsedPalette } from "@/store/paletteSlice";
 
 interface PaletteItemProps {
+  index: number;
   palette: Palette;
 }
 
-const PaletteItem = ({ palette }: PaletteItemProps) => {
+const PaletteItem = ({ index, palette }: PaletteItemProps) => {
   const dispatch = useAppDispatch();
 
   const handleToggleUsed = () => {
@@ -21,7 +22,11 @@ const PaletteItem = ({ palette }: PaletteItemProps) => {
         color-palette-item
         cursor-pointer
         border rounded-lg overflow-hidden
-        ${palette.used ? "border-primary/50" : "border-border"}
+        ${
+          palette.used
+            ? "bg-gray-100 dark:bg-gray-700 border-primary/50"
+            : "border-border"
+        }
       `}
     >
       <Checkbox
@@ -33,16 +38,19 @@ const PaletteItem = ({ palette }: PaletteItemProps) => {
 
       <label
         htmlFor={`palette-${palette.id}`}
-        className="flex-1 flex items-center cursor-pointer"
+        className={`flex-1 flex items-center cursor-pointer
+        ${palette.used ? "line-through text-gray-500 dark:text-gray-400" : ""}
+        `}
       >
+        <span className="mr-2">{index + 1}.</span>
+
         <div className="flex gap-1 w-full">
           {palette.colors.map((color, idx) => (
             <div
               key={`${palette.id}-${idx}`}
-              className="color-swatch flex-1 rounded-md border border-gray-200 dark:border-gray-700"
+              className={`h-15 color-swatch flex-1 rounded-md border border-gray-200 dark:border-gray-700`}
               style={{
                 backgroundColor: color.value,
-                height: "60px",
               }}
               title={color.value}
             />

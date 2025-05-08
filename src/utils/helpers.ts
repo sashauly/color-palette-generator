@@ -100,6 +100,18 @@ export const shuffleColors = (palettes: Palette[]): Palette[] => {
   return combinedPalettes;
 };
 
+export const arePalettesEqual = (p1: Palette, p2: Palette): boolean => {
+  if (p1.colors.length !== p2.colors.length) {
+    return false;
+  }
+  for (let i = 0; i < p1.colors.length; i++) {
+    if (p1.colors[i].value !== p2.colors[i].value) {
+      return false;
+    }
+  }
+  return true;
+};
+
 export const hexToRgb = (hex: string): [number, number, number] | null => {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result
@@ -165,6 +177,7 @@ export const calculateColorStatistics = (
   return statistics;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const exportToZip = async (state: any): Promise<void> => {
   try {
     const zip = new JSZip();

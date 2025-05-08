@@ -1,3 +1,4 @@
+import React, { useState, useEffect, useCallback } from "react";
 import { Slider } from "@/components/ui/slider";
 import { useAppSelector, useAppDispatch } from "@/store/store";
 import { setPaletteSize } from "@/store/paletteSlice";
@@ -12,19 +13,23 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "./ui/collapsible";
-import { Button } from "./ui/button";
+} from "@/components/ui/collapsible";
+import { Button } from "@/components/ui/button";
 import { ChevronsUpDown } from "lucide-react";
-import { togglePaletteSizeSelectorOpen } from "@/store/uiSlice";
-import { useState, useEffect } from "react";
+import {
+  togglePaletteSizeSelectorOpen,
+  setPaletteSizeConfirmDialogOpen,
+} from "@/store/uiSlice";
+import PaletteSizeConfirmDialog from "./PaletteSizeConfirmDialog";
 
 const MIN_PALETTE_SIZE = 2;
 const MAX_PALETTE_SIZE = 6;
 
-const PaletteSizeSelector = () => {
-  const { paletteSizeSelectorOpen: isOpen } = useAppSelector(
-    (state) => state.ui
-  );
+const PaletteSizeSelector: React.FC = () => {
+  const {
+    paletteSizeSelectorOpen: isCollapsibleOpen,
+    paletteSizeConfirmDialogOpen: paletteSizeConfirmOpen,
+  } = useAppSelector((state) => state.ui);
   const currentPaletteSize = useAppSelector(
     (state) => state.palette.paletteSize
   );
@@ -35,38 +40,59 @@ const PaletteSizeSelector = () => {
 
   const [sliderValue, setSliderValue] = useState<number>(currentPaletteSize);
 
+  const [pendingSize, setPendingSize] = useState<number | null>(null);
+
   useEffect(() => {
     setSliderValue(currentPaletteSize);
   }, [currentPaletteSize]);
 
-  const handleChange = (value: number[]) => {
-    const newSize = value[0];
+  const handleSliderChange = useCallback(
+    (value: number[]) => {
+      const newSize = value[0];
 
-    if (newSize !== currentPaletteSize) {
-      if (hasUsedPalettes) {
-        setSliderValue(newSize);
-        if (
-          window.confirm(
-            "Changing the palette size will clear all generated palettes, including your marked palettes. Are you sure?"
-          )
-        ) {
-          dispatch(setPaletteSize(newSize));
+      if (newSize !== currentPaletteSize) {
+        if (hasUsedPalettes) {
+          setSliderValue(newSize);
+          setPendingSize(newSize);
+          dispatch(setPaletteSizeConfirmDialogOpen(true));
         } else {
-          setSliderValue(currentPaletteSize);
+          dispatch(setPaletteSize(newSize));
+          setSliderValue(newSize);
         }
       } else {
-        dispatch(setPaletteSize(newSize));
         setSliderValue(newSize);
       }
-    } else {
-      setSliderValue(newSize);
+    },
+    [currentPaletteSize, hasUsedPalettes, dispatch]
+  );
+
+  const handleConfirmChange = useCallback(() => {
+    if (pendingSize !== null) {
+      dispatch(setPaletteSize(pendingSize));
     }
-  };
+    dispatch(setPaletteSizeConfirmDialogOpen(false));
+    setPendingSize(null);
+  }, [dispatch, pendingSize]);
+
+  const handleCancelChange = useCallback(() => {
+    dispatch(setPaletteSizeConfirmDialogOpen(false));
+    setPendingSize(null);
+    setSliderValue(currentPaletteSize);
+  }, [currentPaletteSize, dispatch]);
+
+  const handleConfirmDialogStateChange = useCallback(
+    (open: boolean) => {
+      if (!open && paletteSizeConfirmOpen) {
+        handleCancelChange();
+      }
+    },
+    [paletteSizeConfirmOpen, handleCancelChange]
+  );
 
   return (
     <Card>
       <Collapsible
-        open={isOpen}
+        open={isCollapsibleOpen}
         onOpenChange={() => dispatch(togglePaletteSizeSelectorOpen())}
       >
         <CardHeader>
@@ -92,7 +118,7 @@ const PaletteSizeSelector = () => {
               min={MIN_PALETTE_SIZE}
               max={MAX_PALETTE_SIZE}
               step={1}
-              onValueChange={handleChange}
+              onValueChange={handleSliderChange}
               className="py-4"
             />
 
@@ -107,6 +133,14 @@ const PaletteSizeSelector = () => {
           </CardContent>
         </CollapsibleContent>
       </Collapsible>
+
+      <PaletteSizeConfirmDialog
+        isOpen={paletteSizeConfirmOpen}
+        onOpenChange={handleConfirmDialogStateChange}
+        pendingSize={pendingSize}
+        onConfirm={handleConfirmChange}
+        onCancel={handleCancelChange}
+      />
     </Card>
   );
 };

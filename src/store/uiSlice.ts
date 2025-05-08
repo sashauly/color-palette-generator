@@ -6,6 +6,7 @@ const initialState: UiState = {
   paletteSizeSelectorOpen: true,
   colorStatisticsOpen: true,
   addUsedPaletteDialogOpen: false,
+  paletteSizeConfirmDialogOpen: false,
 };
 
 const uiSlice = createSlice({
@@ -36,6 +37,15 @@ const uiSlice = createSlice({
     setAddUsedPaletteDialogOpen: (state, action: PayloadAction<boolean>) => {
       state.addUsedPaletteDialogOpen = action.payload;
     },
+    setPaletteSizeConfirmDialogOpen: (
+      state,
+      action: PayloadAction<boolean>
+    ) => {
+      state.paletteSizeConfirmDialogOpen = action.payload;
+    },
+    togglePaletteSizeConfirmDialogOpen: (state) => {
+      state.paletteSizeConfirmDialogOpen = !state.paletteSizeConfirmDialogOpen;
+    },
     loadUiState: (state, action: PayloadAction<UiState>) => {
       Object.assign(state, action.payload);
     },
@@ -51,6 +61,8 @@ export const {
   setColorStatisticsOpen,
   toggleAddUsedPaletteDialogOpen,
   setAddUsedPaletteDialogOpen,
+  togglePaletteSizeConfirmDialogOpen,
+  setPaletteSizeConfirmDialogOpen,
   loadUiState,
 } = uiSlice.actions;
 

@@ -24,6 +24,7 @@ export interface UiState {
   paletteSizeSelectorOpen: boolean;
   colorStatisticsOpen: boolean;
   addUsedPaletteDialogOpen: boolean;
+  paletteSizeConfirmDialogOpen: boolean;
 }
 
 export interface AppState {

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   Card,
   CardContent,
@@ -17,18 +17,22 @@ import {
 } from "@/store/paletteSlice";
 import PaletteItem from "./PaletteItem";
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
-import { toggleAddUsedPaletteDialogOpen } from "@/store/uiSlice";
+import {
+  toggleAddUsedPaletteDialogOpen,
+  setPaletteListFilter,
+} from "@/store/uiSlice";
 import { AddUsedPaletteDialog } from "./AddUsedPalette";
 
 import { formatBigInt, shuffleColors } from "@/utils/helpers";
 import MobilePaletteControls from "./MobilePaletteControls";
+import { PaletteListFilter } from "@/types";
 
 export const PaletteList: React.FC = () => {
   const { generatedPalettes, totalCombinations } = useAppSelector(
     (state) => state.palette
   );
+  const { paletteListFilter: filter } = useAppSelector((state) => state.ui);
   const dispatch = useAppDispatch();
-  const [filter, setFilter] = useState("all");
 
   const handleShufflePalettes = () => {
     if (generatedPalettes.length === 0) return;
@@ -39,11 +43,12 @@ export const PaletteList: React.FC = () => {
 
   const handleClearAllPalettes = () => {
     dispatch(clearAllPalettes());
-    dispatch(setGeneratedPalettes([]));
+    dispatch(setPaletteListFilter("all"));
   };
 
   const handleClearUsedPalettes = () => {
     dispatch(clearUsedPalettes());
+    dispatch(setPaletteListFilter("all"));
   };
 
   const handleOpenAddPaletteDialog = () => {
@@ -55,6 +60,12 @@ export const PaletteList: React.FC = () => {
     if (filter === "unused") return !palette.used;
     return true;
   });
+
+  const handleTabChange = (value: string) => {
+    if (value === "all" || value === "used" || value === "unused") {
+      dispatch(setPaletteListFilter(value as PaletteListFilter));
+    }
+  };
 
   return (
     <>
@@ -120,8 +131,8 @@ export const PaletteList: React.FC = () => {
         </CardHeader>
 
         <CardContent>
-          <Tabs defaultValue="all" onValueChange={setFilter}>
-            <TabsList className="flex flex-srap w-full mb-2">
+          <Tabs value={filter} onValueChange={handleTabChange}>
+            <TabsList className="flex flex-wrap w-full mb-2">
               <TabsTrigger value="all">
                 All <span className="sr-only">palettes</span>
                 <span className="rounded-full bg-muted text-muted-foreground border border-border px-2 py-1 text-xs font-medium">

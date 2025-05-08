@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { UiState } from "@/types";
+import { PaletteListFilter, UiState } from "@/types";
 
 const initialState: UiState = {
   colorInputsOpen: true,
@@ -8,6 +8,7 @@ const initialState: UiState = {
   addUsedPaletteDialogOpen: false,
   paletteSizeConfirmDialogOpen: false,
   importExportOpen: false,
+  paletteListFilter: "all",
 };
 
 const uiSlice = createSlice({
@@ -53,6 +54,9 @@ const uiSlice = createSlice({
     toggleImportExportOpen: (state) => {
       state.importExportOpen = !state.importExportOpen;
     },
+    setPaletteListFilter: (state, action: PayloadAction<PaletteListFilter>) => {
+      state.paletteListFilter = action.payload;
+    },
     loadUiState: (state, action: PayloadAction<UiState>) => {
       Object.assign(state, action.payload);
     },
@@ -72,6 +76,7 @@ export const {
   setPaletteSizeConfirmDialogOpen,
   setImportExportOpen,
   toggleImportExportOpen,
+  setPaletteListFilter,
   loadUiState,
 } = uiSlice.actions;
 

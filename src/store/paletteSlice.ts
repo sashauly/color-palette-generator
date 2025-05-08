@@ -8,6 +8,7 @@ import {
   arePalettesEqual,
 } from "@/utils/helpers";
 import { AppDispatch, RootState } from "@/store/store";
+import { setPaletteListFilter } from "./uiSlice";
 
 const defaultInputColors: Color[] = [
   { id: generateId(), value: "#FFFFFF" },
@@ -162,7 +163,7 @@ export const paletteSlice = createSlice({
           "Manually added palette does not match current size or input colors."
         );
         state.addManualPaletteStatus = "invalid";
-        return; 
+        return;
       }
 
       const paletteToAdd = { ...newPalette, colors: validColors };
@@ -207,13 +208,14 @@ export const paletteSlice = createSlice({
 
 const generatePalettesForPage =
   () => (dispatch: AppDispatch, getState: () => RootState) => {
-    const state = getState().palette;
+    const paletteState = getState().palette;
     const {
       inputColors,
       paletteSize,
       totalCombinations,
       generatedPalettes: usedAndGenerated,
-    } = state;
+    } = paletteState;
+    dispatch(setPaletteListFilter("all"));
 
     if (
       inputColors.length < paletteSize ||

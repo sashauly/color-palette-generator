@@ -19,6 +19,8 @@ export interface PaletteState {
   addManualPaletteStatus: AddManualPaletteStatus;
 }
 
+export type PaletteListFilter = "all" | "used" | "unused";
+
 export interface UiState {
   colorInputsOpen: boolean;
   paletteSizeSelectorOpen: boolean;
@@ -26,6 +28,7 @@ export interface UiState {
   addUsedPaletteDialogOpen: boolean;
   paletteSizeConfirmDialogOpen: boolean;
   importExportOpen: boolean;
+  paletteListFilter: PaletteListFilter;
 }
 
 export interface AppState {
